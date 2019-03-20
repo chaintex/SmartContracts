@@ -128,7 +128,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface {
             require(!isReserve[reserve]);
             reserves.push(reserve);
             isReserve[reserve] = true;
-            feeForReserve[reserve] = 25; // default fee for reserve is 0.025% for each tx
+            feeForReserve[reserve] = 25; // default fee for reserve is 0.25% for each tx
             emit AddReserveToNetwork(reserve, true);
         } else {
             isReserve[reserve] = false;
@@ -654,7 +654,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface {
 
         // calculate expected fee for this transaction based on amount of Tomo
         uint tomoValue = src == TOMO_TOKEN_ADDRESS ? callValue : expectedDestAmount;
-        uint feeInWei = tomoValue * feeForReserve[reserve] / 100000; // feePercent = 25 -> fee = 25/100000 = 0.025%
+        uint feeInWei = tomoValue * feeForReserve[reserve] / 10000; // feePercent = 25 -> fee = 25/10000 = 0.25%
 
         // Logics: expected to receive exactly feeInWei amount of TOMO as fee from reserve.
         // - If feeHolder and src == TOMO
