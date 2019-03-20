@@ -320,9 +320,33 @@ contract Utils2 is Utils {
     }
 }
 
+/**
+ * @title Helps contracts guard against reentrancy attacks.
+ */
+contract ReentrancyGuard {
+
+    /// @dev counter to allow mutex lock with only one SSTORE operation
+    uint256 private guardCounter = 1;
+
+    /**
+     * @dev Prevents a function from calling itself, directly or indirectly.
+     * Calling one `nonReentrant` function from
+     * another is not supported. Instead, you can implement a
+     * `private` function doing the actual work, and an `external`
+     * wrapper marked as `nonReentrant`.
+     */
+    modifier nonReentrant() {
+        guardCounter += 1;
+        uint256 localCounter = guardCounter;
+        _;
+        require(localCounter == guardCounter);
+    }
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @title Network main contract
-contract Network is Withdrawable, Utils2, NetworkInterface {
+contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
 
     uint public negligibleRateDiff = 10; // basic rate steps will be in 0.01%
     ReserveInterface[] public reserves;
@@ -380,6 +404,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface {
         address walletId
     )
         public
+        nonReentrant
         payable
         returns(uint)
     {
@@ -408,6 +433,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface {
         uint minConversionRate
     )
         public
+        nonReentrant
         payable
         returns(uint)
     {
