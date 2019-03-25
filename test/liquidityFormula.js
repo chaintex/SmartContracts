@@ -15,33 +15,34 @@ contract('LiquidityFormula', function(accounts) {
 
     it("check checkMultOverflow", async function () {
         const big = new BigNumber(2).pow(128);
+        const bigNum = "0x" + big.toString(16);
         const small = new BigNumber(2).pow(100);
+        const smallNum = "0x" + small.toString(16);
 
         let overflow;
-
-        overflow = await liquidityContract.checkMultOverflow(big,big);
+        overflow = await liquidityContract.checkMultOverflow(bigNum,bigNum);
         assert( overflow, "big * big should overflow");
 
-        overflow = await liquidityContract.checkMultOverflow(small,big);
+        overflow = await liquidityContract.checkMultOverflow(smallNum,bigNum);
         assert( !overflow, "big * small should not overflow");
 
-        overflow = await liquidityContract.checkMultOverflow(0, big);
+        overflow = await liquidityContract.checkMultOverflow(0, bigNum);
         assert( !overflow, "0 * big should not overflow");
 
-        overflow = await liquidityContract.checkMultOverflow(big, 0);
+        overflow = await liquidityContract.checkMultOverflow(bigNum, 0);
         assert( !overflow, "big * 0 should not overflow");
     });
 
     it("check exp with fixed input", async function () {
         const precisionBits = 20;
         const precision = new BigNumber(2).pow(precisionBits);
-        const q = precision.mul(precision);
-        const p = new BigNumber('121').mul(q.div(2**3));
+        const q = new BigNumber(precision.mul(precision).round());
+        const p = new BigNumber(new BigNumber('121').mul(q.div(2**3)).round());
 
         const expectedResult = Helper.exp(e,new BigNumber(p).div(q)).mul(precision);
-        console.log("EXP: Expected Result: " + expectedResult);
+        // console.log("EXP: Expected Result: " + expectedResult);
         const result = await liquidityContract.exp(p,q,precision);
-        console.log("EXP: Actual Result: " + result);
+        // console.log("EXP: Actual Result: " + result);
 
         Helper.assertAbsDiff(expectedResult,result,expectedDiffInPct);
     });
@@ -49,13 +50,13 @@ contract('LiquidityFormula', function(accounts) {
     it("check ln with fixed input", async function () {
         const precisionBits = 20;
         const precision = new BigNumber(2).pow(precisionBits);
-        const q = precision.mul(precision);
-        const p = new BigNumber('1245651').mul(q.div(2**3));
+        const q = new BigNumber(precision.mul(precision).round());
+        const p = new BigNumber(new BigNumber('1245651').mul(q.div(2**3)).round());
 
         const expectedResult = Helper.ln(new BigNumber(p).div(q)).mul(precision);
-        console.log("Ln: Expected Result: " + expectedResult);
+        // console.log("Ln: Expected Result: " + expectedResult);
         const result = await liquidityContract.ln(p,q,precisionBits);
-        console.log("Ln: Actual Result: " + result);
+        // console.log("Ln: Actual Result: " + result);
 
         Helper.assertAbsDiff(expectedResult,result,expectedDiffInPct);
     });
@@ -69,12 +70,12 @@ contract('LiquidityFormula', function(accounts) {
 
         // P(E) = Pmin * e^(rE)
         const expectedResult = Helper.exp(e,r.mul(E)).mul(Pmin).mul(precision);
-        console.log("P(E): Expected Result: " + expectedResult);
-        const result = await liquidityContract.pE(r.mul(precision),
-                                                  Pmin.mul(precision),
-                                                  E.mul(precision),
+        // console.log("P(E): Expected Result: " + expectedResult);
+        const result = await liquidityContract.pE(new BigNumber(r.mul(precision).round()),
+                                                  new BigNumber(Pmin.mul(precision).round()),
+                                                  new BigNumber(E.mul(precision).round()),
                                                   precision);
-        console.log("P(E): Actual Result: " + result);
+        // console.log("P(E): Actual Result: " + result);
 
         Helper.assertAbsDiff(expectedResult,result,expectedDiffInPct);
     });
@@ -90,19 +91,17 @@ contract('LiquidityFormula', function(accounts) {
 
         const pe = Helper.exp(e,r.mul(E)).mul(Pmin).mul(precision);
         const pdelta = (Helper.exp(e,r.mul(deltaE).mul(-1)).sub(1)).mul(precision);
-
+        // console.log("DeltaT: pe " + pe);
+        // console.log("DeltaT: pdelta " + pdelta);
 
         const expectedResult = pdelta.div(pe.mul(r)).mul(precision).mul(-1);
-        console.log("DeltaT: Expected Result: " + expectedResult);
-        const result = await liquidityContract.deltaTFunc(r.mul(precision),
-                                                          Pmin.mul(precision),
-                                                          E.mul(precision),
+        // console.log("DeltaT: Expected Result: " + expectedResult);
+        const result = await liquidityContract.deltaTFunc(new BigNumber(r.mul(precision).round()),
+                                                          new BigNumber(Pmin.mul(precision).round()),
+                                                          new BigNumber(E.mul(precision).round()),
                                                           deltaE.mul(precision),
                                                           precision);
-        console.log("DeltaT: Actual Result: " + result);
-
-        console.log(result.div(precision).toString(10));
-        console.log(expectedResult.div(precision).toString(10));
+        // console.log("DeltaT: Actual Result: " + result);
 
         Helper.assertAbsDiff(expectedResult,result,expectedDiffInPct);
 
@@ -121,17 +120,14 @@ contract('LiquidityFormula', function(accounts) {
         const pe = Helper.exp(e,r.mul(E)).mul(Pmin);
         const lnPart = Helper.ln((r.mul(deltaT).mul(pe)).add(1));
         const expectedResult = (lnPart.div(r)).mul(precision);
-        console.log("DetalE: Expected Result: " + expectedResult);
-        const result = await liquidityContract.deltaEFunc(r.mul(precision),
-                                                          Pmin.mul(precision),
-                                                          E.mul(precision),
+        // console.log("DetalE: Expected Result: " + expectedResult);
+        const result = await liquidityContract.deltaEFunc(new BigNumber(r.mul(precision).round()),
+                                                          new BigNumber(Pmin.mul(precision).round()),
+                                                          new BigNumber(E.mul(precision).round()),
                                                           deltaT.mul(precision),
                                                           precision,
                                                           precisionBits);
-        console.log("DeltaE: Actual Result: " + result);
-
-        console.log(result.div(precision).toString(10));
-        console.log(expectedResult.div(precision).toString(10));
+        // console.log("DeltaE: Actual Result: " + result);
 
         Helper.assertAbsDiff(expectedResult,result,expectedDiffInPct);
 
