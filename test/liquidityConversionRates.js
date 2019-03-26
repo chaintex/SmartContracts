@@ -458,24 +458,30 @@ contract('LiquidityConversionRates', function(accounts) {
         let expectedResult = priceForDeltaT(feePercent, r, pMin, deltaTAfterReducingFee, e0).mul(precision).valueOf()
         let result =  await liqConvRatesInst.getRateWithE(token.address,false,'0x' + qtyInSrcWei.toString(16),eInFp);
         let gotResult = result
-        console.log("Result: " + result);
 
         Helper.assertAbsDiff(result, expectedResult, expectedDiffInPct)
         assert.notEqual(result, 0, "bad result");
 
         let currentMaxSellRateInPrecision = gotResult - 100;
-        console.log("Current max sell: " + currentMaxSellRateInPrecision);
         let currentMinSellRateInPrecision= minSellRateInPrecision
         await liqConvRatesInst.setLiquidityParams(rInFp, pMinInFp, formulaPrecisionBits, maxCapBuyInWei, maxCapSellInWei, feeInBps, currentMaxSellRateInPrecision, currentMinSellRateInPrecision)
-        console.log("Pass lol");
         result =  await liqConvRatesInst.getRateWithE(token.address,false,'0x'+qtyInSrcWei.toString(16),eInFp);
-        console.log("Result: " + result);
         assert.equal(result, 0, "bad result");
 
         currentMaxSellRateInPrecision = maxSellRateInPrecision
-        currentMinSellRateInPrecision = gotResult + 100
+        currentMinSellRateInPrecision = new BigNumber(gotResult).plus(100)
+        // console.log("Setting liqui params");
+        // console.log("rInFp: " + rInFp);
+        // console.log("pMinInFp: " + pMinInFp);
+        // console.log("formulaPrecisionBits: " + formulaPrecisionBits);
+        // console.log("maxCapBuyInWei: " + maxCapBuyInWei);
+        // console.log("maxCapSellInWei: " + maxCapSellInWei);
+        // console.log("feeInBps: " + feeInBps);
+        // console.log("currentMaxSellRateInPrecision: " + currentMaxSellRateInPrecision);
+        // console.log("currentMinSellRateInPrecision: " + currentMinSellRateInPrecision);
         await liqConvRatesInst.setLiquidityParams(rInFp, pMinInFp, formulaPrecisionBits, maxCapBuyInWei, maxCapSellInWei, feeInBps, currentMaxSellRateInPrecision, currentMinSellRateInPrecision)
-        result =  await liqConvRatesInst.getRateWithE(token.address,false,qtyInSrcWei,eInFp);
+        // console.log("Done settings liqui params");
+        result =  await liqConvRatesInst.getRateWithE(token.address,false,'0x'+qtyInSrcWei.toString(16),eInFp);
         assert.equal(result, 0, "bad result");
 
         //return things to normal
@@ -560,7 +566,7 @@ contract('kyberReserve for Liquidity', function(accounts) {
         console.log("Balance: " + balance.valueOf());
         console.log("Reserve ether init: " + reserveEtherInit);
 
-        assert.equal(balance.valueOf(), reserveEtherInit, "wrong ether balance");
+        assert.equal((new BigNumber(balance)).valueOf(), (new BigNumber(reserveEtherInit)).valueOf(), "wrong ether balance");
 
         await reserveInst.approveWithdrawAddress(token.address,accounts[0],true);
 
@@ -570,7 +576,7 @@ contract('kyberReserve for Liquidity', function(accounts) {
         balance = await token.balanceOf(reserveInst.address);
         console.log("Balance: " + balance.valueOf());
         console.log("Amount: " + amount.valueOf());
-        assert.equal(amount.valueOf(), balance.valueOf());
+        assert.equal((new BigNumber(amount)).valueOf(), (new BigNumber(balance)).valueOf());
 
         reserveTokenBalance = amount;
     });
@@ -663,26 +669,26 @@ contract('kyberReserve for Liquidity', function(accounts) {
             }
 
             //perform trade
-            await reserveInst.trade(ethAddress, amountWei, token.address, user1, buyRate, true, {from:network, value:amountWei});
+            await reserveInst.trade(ethAddress, amountWei, token.address, user1, buyRate, 0, true, {from:network, value:amountWei});
             balancesAfter = await getBalances();
 
             // check reserve eth balance after the trade (got more eth) is as expected.
-            expectedReserveBalanceWei = balancesBefore["EInWei"].add(amountWei);
+            expectedReserveBalanceWei = (new BigNumber(balancesBefore["EInWei"])).plus(amountWei);
             assert.equal(balancesAfter["EInWei"].valueOf(), expectedReserveBalanceWei.valueOf(), "bad reserve balance wei");
 
             // check token balance on user1 after the trade (got more tokens) is as expected.
             tradeExpectedTweiAmount = expectedRate.mul(amountWei).div(precision)
-            expectedUser1TweiAmount = balancesBefore["User1Twei"].plus(tradeExpectedTweiAmount);
+            expectedUser1TweiAmount = (new BigNumber(balancesBefore["User1Twei"])).plus(tradeExpectedTweiAmount);
             Helper.assertAbsDiff(balancesAfter["User1Twei"], expectedUser1TweiAmount, expectedDiffInPct);
 
             // check reserve token balance after the trade (lost some tokens) is as expected.
             tradeActualTweiAmount = buyRate.mul(amountWei).div(precision)
-            expectedReserveTokenBalance = balancesBefore["TInTwei"].sub(tradeActualTweiAmount);
+            expectedReserveTokenBalance = (new BigNumber(balancesBefore["TInTwei"])).sub(tradeActualTweiAmount);
             Helper.assertAbsDiff(balancesAfter["TInTwei"], expectedReserveTokenBalance, expectedDiffInPct);
 
             // check collected fees for this trade is as expected
             expectedCollectedFeesDiff = tradeActualTweiAmount.mul(feePercent / 100).div(tokenPrecision * ((100 - feePercent)/100));
-            collectedFeesInTokensDiff = balancesAfter["collectedFeesInTokens"].sub(balancesBefore["collectedFeesInTokens"])
+            collectedFeesInTokensDiff = (new BigNumber(balancesAfter["collectedFeesInTokens"])).sub(balancesBefore["collectedFeesInTokens"])
             Helper.assertAbsDiff(expectedCollectedFeesDiff, collectedFeesInTokensDiff, expectedDiffInPct);
 
             /* removed following test since now we allow putting bigger T0 than needed for calcs.
@@ -711,7 +717,7 @@ contract('kyberReserve for Liquidity', function(accounts) {
         //which collects tokens from network.
         //so here transfer tokens to network and approve allowance from network to reserve.
         let tx4InTwei = new BigNumber(t0).mul(4).mul(tokenPrecision).round();
-        await token.transfer(network, tx4InTwei);
+        await token.transfer(network, '0x' + tx4InTwei.toString(16));
 
         while (true) {
             iterations++;
@@ -757,24 +763,24 @@ contract('kyberReserve for Liquidity', function(accounts) {
 
             //pre trade step, approve allowance from user to network.
             await token.approve(reserveInst.address, '0x' + amountTwei.toString(16), {from: network});
-            await reserveInst.trade(token.address, '0x' + amountTwei.toString(16), ethAddress, user2, '0x' + sellRate.toString(16), true, {from:network});
+            await reserveInst.trade(token.address, '0x' + amountTwei.toString(16), ethAddress, user2, '0x' + sellRate.toString(16), 0, true, {from:network});
             balancesAfter = await getBalances();
 
             // check reserve eth balance after the trade (reserve lost some eth) is as expected.
-            expectedReserveBalanceWei = balancesBefore["EInWei"].sub(tradeExpectedWeiAmount);
+            expectedReserveBalanceWei = (new BigNumber(balancesBefore["EInWei"])).sub(tradeExpectedWeiAmount);
             Helper.assertAbsDiff(balancesAfter["EInWei"], expectedReserveBalanceWei, expectedDiffInPct);
 
             //check token balance on network after the trade (lost some tokens) is as expected.
-            expectedTweiAmount = balancesBefore["networkTwei"].sub(amountTwei);
+            expectedTweiAmount = (new BigNumber(balancesBefore["networkTwei"])).sub(amountTwei);
             Helper.assertAbsDiff(balancesAfter["networkTwei"], expectedTweiAmount, expectedDiffInPct);
 
             //check reserve token balance after the trade (got some tokens) is as expected.
-            expectedReserveTokenBalance = balancesBefore["TInTwei"].plus(amountTwei);
+            expectedReserveTokenBalance = (new BigNumber(balancesBefore["TInTwei"])).plus(amountTwei);
             Helper.assertAbsDiff(balancesAfter["TInTwei"], expectedReserveTokenBalance, expectedDiffInPct);
 
             // check collected fees for this trade is as expected
             expectedCollectedFeesDiff = amountTwei.mul(feePercent / 100).div(tokenPrecision);
-            collectedFeesInTokensDiff = balancesAfter["collectedFeesInTokens"].sub(balancesBefore["collectedFeesInTokens"])
+            collectedFeesInTokensDiff = (new BigNumber(balancesAfter["collectedFeesInTokens"])).sub(balancesBefore["collectedFeesInTokens"])
             Helper.assertAbsDiff(expectedCollectedFeesDiff, collectedFeesInTokensDiff, expectedDiffInPct);
 
             /* removed following test since now we allow putting bigger T0 than needed for calcs.
