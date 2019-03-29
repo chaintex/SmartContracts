@@ -55,5 +55,6 @@
   "expectedRate": "0x84eb1bb2cdbd610bde4b9c645f0206438c0e9f17",
   "admin": "0x4f2604aaC91114aE3b3D0be485D407D02B24480B",
   "testReceiver": "0x2262d4f6312805851e3b27c40db2c7282e6e4a49",
-  "testTokenAmount": "0x1B69B4BACD05F15"
+  "testTokenAmount": "0x1B69B4BACD05F15",
+  "tradeTopic": "0x314089036943f0e5ddddd6939d359902c01dac1be72c517cc8342fca023ad71e"
 }
