@@ -37,16 +37,11 @@ contract FeeSharing is Withdrawable, FeeSharingInterface, Utils2, ReentrancyGuar
 
     NetworkInterface public network;
 
-    function FeeBurner(
-        address _admin,
-        NetworkInterface _network
-    )
-        public
-    {
-        require(_admin != address(0));
-        require(_network != address(0));
-        network = _network;
-        admin = _admin;
+    constructor(address _admin, NetworkInterface _network) public {
+      require(_admin != address(0));
+      require(_network != address(0));
+      network = _network;
+      admin = _admin;
     }
 
     event SetNewNetworkContract(NetworkInterface _network);

@@ -73,12 +73,6 @@ contract MaliciousNetwork2 is Network {
             }
         }
 
-        if (feeHolder != address(this)) {
-          require(address(this).balance >= feeInWei);
-          // transfer fee to feeHolder
-          feeHolder.transfer(feeInWei);
-        }
-
         return true;
     }
 }
