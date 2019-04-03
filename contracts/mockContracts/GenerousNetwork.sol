@@ -76,6 +76,27 @@ contract GenerousNetwork is Network {
                 rateResult.rateTomoToDest,
                 true));
 
+
+        uint totalFeeInWei = 0;
+
+        if (tradeInput.src != TOMO_TOKEN_ADDRESS && feeSharing != address(0) && feeForReserve[rateResult.reserve1] > 0) {
+          //not a "fake" trade tomo to tomo
+          totalFeeInWei += weiAmount * feeForReserve[rateResult.reserve1] / 10000;
+        }
+
+        if (tradeInput.dest != TOMO_TOKEN_ADDRESS && feeSharing != address(0) && feeForReserve[rateResult.reserve2] > 0) {
+          //not a "fake" trade tomo to tomo
+          totalFeeInWei += weiAmount * feeForReserve[rateResult.reserve2] / 10000;
+        }
+
+        if (totalFeeInWei > 0) {
+          uint balanceBefore = address(this).balance;
+          require(balanceBefore >= totalFeeInWei);
+          require(feeSharing.handleFees.value(totalFeeInWei)(tradeInput.walletId));
+          uint balanceAfter = address(this).balance;
+          require(balanceAfter == balanceBefore - totalFeeInWei);
+        }
+
         return (actualDestAmount);
     }
     /* solhint-enable function-max-lines */
