@@ -88,7 +88,6 @@ contract NetworkProxy is NetworkProxyInterface, SimpleNetworkInterface, Withdraw
     {
         require(src == TOMO_TOKEN_ADDRESS || msg.value == 0);
         require(payFeeCallers[msg.sender] == true, "payTxFee: Sender is not callable this function");
-        require(msg.sender != networkContract.getFeeHolder());
         TRC20 dest = TOMO_TOKEN_ADDRESS;
 
         UserBalance memory userBalanceBefore;
@@ -235,7 +234,6 @@ contract NetworkProxy is NetworkProxyInterface, SimpleNetworkInterface, Withdraw
         returns(uint)
     {
         require(src == TOMO_TOKEN_ADDRESS || msg.value == 0);
-        require(msg.sender != networkContract.getFeeHolder());
 
         UserBalance memory userBalanceBefore;
 
