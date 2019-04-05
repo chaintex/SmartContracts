@@ -1,5 +1,5 @@
 {
-  "networkProxy": "0xd9a5478ccf6b74a9c8b992c6a634cc1bfbc2f1bc",
+  "networkProxy": "0xbbe372fe629ea83b36c2272af2ea104ea74810d0",
   "networkID": 3,
   "chainName": "Ropsten",
   "ethScanUrl": "https://ropsten.etherscan.io/",
@@ -18,7 +18,7 @@
       "name": "Mike Token",
       "icon": "mtk",
       "symbol": "MTK",
-      "reserve": "0xfb75fcca6e6570df906ea5a55c5c791bb98b3dd6"
+      "reserve": "0x73f232b1026e18e837dc218ad03da085f05d1337"
     },
     "CTC": {
       "address": "0x18098c678ed6277d4922ddc069e4ddc39f99ecf7",
@@ -26,7 +26,7 @@
       "name": "ChainTEX Coin",
       "icon": "ctc",
       "symbol": "CTC",
-      "reserve": "0x3eec5a25118a0059c438b8b1c8bb93fda96aff46"
+      "reserve": "0xf258f7d2621a22f374849e0ae8cc5a06574a83d4"
     }
   },
   "connections": {
