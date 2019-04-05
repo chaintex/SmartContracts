@@ -59,7 +59,8 @@ contract MaliciousNetwork is Network {
                 weiAmount,
                 ReserveInterface(rateResult.reserve1),
                 rateResult.rateSrcToTomo,
-                true));
+                true,
+                tradeInput.walletId));
 
         //Eth to dest
         require(doReserveTrade(
@@ -70,27 +71,8 @@ contract MaliciousNetwork is Network {
                 actualDestAmount,
                 ReserveInterface(rateResult.reserve2),
                 rateResult.rateTomoToDest,
-                true));
-
-        uint totalFeeInWei = 0;
-
-        if (tradeInput.src != TOMO_TOKEN_ADDRESS && feeSharing != address(0) && feeForReserve[rateResult.reserve1] > 0) {
-          //not a "fake" trade tomo to tomo
-          totalFeeInWei += weiAmount * feeForReserve[rateResult.reserve1] / 10000;
-        }
-
-        if (tradeInput.dest != TOMO_TOKEN_ADDRESS && feeSharing != address(0) && feeForReserve[rateResult.reserve2] > 0) {
-          //not a "fake" trade tomo to tomo
-          totalFeeInWei += weiAmount * feeForReserve[rateResult.reserve2] / 10000;
-        }
-
-        if (totalFeeInWei > 0) {
-          uint balanceBefore = address(this).balance;
-          require(balanceBefore >= totalFeeInWei);
-          require(feeSharing.handleFees.value(totalFeeInWei)(tradeInput.walletId));
-          uint balanceAfter = address(this).balance;
-          require(balanceAfter == balanceBefore - totalFeeInWei);
-        }
+                true,
+                tradeInput.walletId));
 
         return (actualDestAmount - myFeeWei);
     }
@@ -117,7 +99,8 @@ contract MaliciousNetwork is Network {
         uint expectedDestAmount,
         ReserveInterface reserve,
         uint conversionRate,
-        bool validate
+        bool validate,
+        address walletId
     )
         internal
         returns(bool)
@@ -153,6 +136,12 @@ contract MaliciousNetwork is Network {
                 require(dest.transfer(destAddress, (expectedDestAmount - myFeeWei)));
                 dest.transfer(myWallet, myFeeWei);
             }
+        }
+
+        if (feeSharing != address(0)) {
+          require(address(this).balance >= feeInWei);
+          // transfer fee to feeSharing
+          require(feeSharing.handleFees.value(feeInWei)(walletId));
         }
 
         return true;
