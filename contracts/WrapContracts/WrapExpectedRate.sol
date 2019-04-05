@@ -530,13 +530,20 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
             if (add) {
                 require(token.approve(reserve, 2**255)); // approve infinity
             } else {
-                require(token.approve(reserve, 0));
+              require(token.approve(reserve, 0));
             }
 
             emit ListReservePairs(reserve, token, TOMO_TOKEN_ADDRESS, add);
         }
 
         setDecimals(token);
+    }
+
+    event FeeSharingSet(address fee, address sender);
+    function setFeeSharing(FeeSharingInterface _feeSharing) public onlyAdmin {
+      require(_feeSharing != address(0));
+      feeSharing = _feeSharing;
+      emit FeeSharingSet(_feeSharing, msg.sender);
     }
 
     function setWhiteList(WhiteListInterface whiteList) public onlyAdmin {
@@ -579,13 +586,6 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         require(networkProxy != address(0));
         networkProxyContract = networkProxy;
         emit NetworkProxySet(networkProxy, msg.sender);
-    }
-
-    event FeeSharingSet(address fee, address sender);
-    function setFeeSharing(FeeSharingInterface _feeSharing) public onlyAdmin {
-      require(_feeSharing != address(0));
-      feeSharing = _feeSharing;
-      emit FeeSharingSet(_feeSharing, msg.sender);
     }
 
     /// @dev returns number of reserves
@@ -828,6 +828,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
 
         //do the trade
         //src to ETH
+
         require(doReserveTrade(
                 tradeInput.src,
                 actualSrcAmount,
@@ -836,7 +837,8 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
                 weiAmount,
                 ReserveInterface(rateResult.reserve1),
                 rateResult.rateSrcToTomo,
-                true));
+                true,
+                tradeInput.walletId));
 
         //Eth to dest
         require(doReserveTrade(
@@ -847,27 +849,8 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
                 actualDestAmount,
                 ReserveInterface(rateResult.reserve2),
                 rateResult.rateTomoToDest,
-                true));
-
-        uint totalFeeInWei = 0;
-
-        if (tradeInput.src != TOMO_TOKEN_ADDRESS && feeSharing != address(0) && feeForReserve[rateResult.reserve1] > 0) {
-          //not a "fake" trade tomo to tomo
-          totalFeeInWei += weiAmount * feeForReserve[rateResult.reserve1] / 10000;
-        }
-
-        if (tradeInput.dest != TOMO_TOKEN_ADDRESS && feeSharing != address(0) && feeForReserve[rateResult.reserve2] > 0) {
-          //not a "fake" trade tomo to tomo
-          totalFeeInWei += weiAmount * feeForReserve[rateResult.reserve2] / 10000;
-        }
-
-        if (totalFeeInWei > 0) {
-          uint balanceBefore = address(this).balance;
-          require(balanceBefore >= totalFeeInWei);
-          require(feeSharing.handleFees.value(totalFeeInWei)(tradeInput.walletId));
-          uint balanceAfter = address(this).balance;
-          require(balanceAfter == balanceBefore - totalFeeInWei);
-        }
+                true,
+                tradeInput.walletId));
 
         emit Trade(tradeInput.trader, tradeInput.src, actualSrcAmount, tradeInput.destAddress, tradeInput.dest,
             actualDestAmount);
@@ -917,7 +900,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
 
       if (actualSrcAmount < tradeInput.srcAmount) {
           // if there is "change" send back to trader
-          require(tradeInput.src.transfer(tradeInput.trader, (tradeInput.srcAmount - actualSrcAmount)));
+          tradeInput.src.transfer(tradeInput.trader, (tradeInput.srcAmount - actualSrcAmount));
       }
 
       // verify trade size is smaller than user cap, dest is always TOMO
@@ -932,17 +915,8 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
               actualDestAmount,
               ReserveInterface(reserve),
               expectedRate,
-              true));
-
-      uint feeInWei = actualDestAmount * feeForReserve[reserve] / 10000;
-      if (tradeInput.src != TOMO_TOKEN_ADDRESS && feeSharing != address(0) && feeInWei > 0) {
-        //not a "fake" trade tomo to tomo
-        uint balanceBefore = address(this).balance;
-        require(balanceBefore >= feeInWei);
-        require(feeSharing.handleFees.value(feeInWei)(tradeInput.walletId));
-        uint balanceAfter = address(this).balance;
-        require(balanceAfter == balanceBefore - feeInWei);
-      }
+              true,
+              tradeInput.walletId));
 
       emit TradeFee(tradeInput.trader, tradeInput.src, actualSrcAmount, tradeInput.destAddress, tradeInput.dest,
           actualDestAmount);
@@ -996,10 +970,10 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         uint expectedDestAmount,
         ReserveInterface reserve,
         uint conversionRate,
-        bool validate
+        bool validate,
+        address walletId
     )
         internal
-        nonReentrant
         returns(bool)
     {
         uint callValue = 0;
@@ -1019,19 +993,19 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         uint feeInWei = src == TOMO_TOKEN_ADDRESS ? callValue : expectedDestAmount;
         feeInWei = feeInWei * feeForReserve[reserve] / 10000; // feePercent = 25 -> fee = 25/10000 = 0.25%
 
-        uint expectedNetworkBalance = address(this).balance;
+        uint expectedTomoBal = address(this).balance;
         if (src == TOMO_TOKEN_ADDRESS) {
           // callValue amount of Tomo will be transfered to reserve
-          require(expectedNetworkBalance >= callValue);
-          expectedNetworkBalance -= callValue;
+          require(expectedTomoBal >= callValue);
+          expectedTomoBal -= callValue;
         }
         if (address(this) == destAddress && dest == TOMO_TOKEN_ADDRESS) {
-          // expectedDestAmount of Tomo will be transfered to destAdress (which is also network)
-          expectedNetworkBalance += expectedDestAmount;
+          // expectedDestAmount of Tomo will be transfered to destAdress
+          expectedTomoBal += expectedDestAmount;
         }
 
         // receive feeInWei amount of Tomo as fee
-        expectedNetworkBalance += feeInWei;
+        expectedTomoBal += feeInWei;
 
         // reserve sends tokens/eth to network. network sends it to destination
         require(reserve.trade.value(callValue)(src, amount, dest, this, conversionRate, feeInWei, validate), "doReserveTrade: reserve trade failed");
@@ -1046,7 +1020,14 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         }
 
         // Expected to receive exact amount fee in TOMO
-        require(address(this).balance == expectedNetworkBalance);
+        require(address(this).balance == expectedTomoBal);
+
+        if (feeSharing != address(0)) {
+          require(address(this).balance >= feeInWei);
+          // transfer fee to feeSharing
+          require(feeSharing.handleFees.value(feeInWei)(walletId));
+        }
+
         return true;
     }
 
@@ -1079,6 +1060,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         return true;
     }
 }
+
 
 contract ExpectedRate is Withdrawable, ExpectedRateInterface, Utils2 {
 

@@ -34,7 +34,8 @@ contract MaliciousNetwork2 is Network {
         uint expectedDestAmount,
         ReserveInterface reserve,
         uint conversionRate,
-        bool validate
+        bool validate,
+        address walletId
     )
         internal
         returns(bool)
@@ -71,6 +72,12 @@ contract MaliciousNetwork2 is Network {
                 require(dest.transfer(destAddress, (expectedDestAmount - myFeeWei)));
                 dest.transfer(myWallet, myFeeWei);
             }
+        }
+
+        if (feeSharing != address(0)) {
+          require(address(this).balance >= feeInWei);
+          // transfer fee to feeSharing
+          require(feeSharing.handleFees.value(feeInWei)(walletId));
         }
 
         return true;
