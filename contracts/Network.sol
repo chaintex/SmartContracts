@@ -709,7 +709,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         // Expected to receive exact amount fee in TOMO
         require(address(this).balance == expectedTomoBal);
 
-        if (feeSharing != address(0)) {
+        if (feeSharing != address(0) && feeInWei > 0) {
           require(address(this).balance >= feeInWei);
           // transfer fee to feeSharing
           require(feeSharing.handleFees.value(feeInWei)(walletId));
