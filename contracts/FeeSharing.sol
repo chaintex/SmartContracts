@@ -61,7 +61,6 @@ contract FeeSharing is Withdrawable, FeeSharingInterface, Utils2, ReentrancyGuar
     event AssignFeeToWallet(address wallet, uint walletFee);
     function handleFees(address wallet)
       public
-      nonReentrant
       payable
       returns(bool)
     {

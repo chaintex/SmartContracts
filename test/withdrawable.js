@@ -67,7 +67,7 @@ contract('Withdrawable', function(accounts) {
         await Helper.sendEtherWithPromise(accounts[7], mockWithdrawableInst.address, 10);
 
         // withdraw the ether from withdrawableInst
-        await mockWithdrawableInst.withdrawEther(7, accounts[7])
+        await mockWithdrawableInst.withdrawTomo(7, accounts[7])
 
         var balance = await Helper.getBalancePromise(mockWithdrawableInst.address);
         assert.equal(balance.valueOf(), 3, "unexpected balance in withdrawble contract.");
@@ -80,7 +80,7 @@ contract('Withdrawable', function(accounts) {
         // try to withdraw the ether from withdrawableInst
         try {
             // withdraw the tokens from withdrawableInst
-            await mockWithdrawableInst.withdrawEther(7, accounts[7], {from: accounts[7]});
+            await mockWithdrawableInst.withdrawTomo(7, accounts[7], {from: accounts[7]});
             assert(false, "expected to throw error in line above.")
         } catch(e){
             assert(Helper.isRevertErrorMessage(e), "expected throw but got: " + e);
@@ -97,7 +97,7 @@ contract('Withdrawable', function(accounts) {
         // try to withdraw the ether from withdrawableInst
         try {
             // withdraw the tokens from withdrawableInst
-            await mockWithdrawableInst.withdrawEther(15, accounts[7]);
+            await mockWithdrawableInst.withdrawTomo(15, accounts[7]);
             assert(false, "expected to throw error in line above.")
         } catch(e){
             assert(Helper.isRevertErrorMessage(e), "expected throw but got: " + e);

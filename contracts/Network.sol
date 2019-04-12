@@ -59,14 +59,14 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         admin = _admin;
     }
 
-    event EtherReceival(address indexed sender, uint amount);
+    event TomoReceival(address indexed sender, uint amount);
 
     /* solhint-disable no-complex-fallback */
     // To avoid users trying to swap tokens using default payable function. We added this short code
     //  to verify Tomos will be received only from reserves if transferred without a specific function call.
     function() public payable {
         require(isReserve[msg.sender]);
-        emit EtherReceival(msg.sender, msg.value);
+        emit TomoReceival(msg.sender, msg.value);
     }
     /* solhint-enable no-complex-fallback */
 
@@ -185,6 +185,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
       for(uint i = 0; i < reserveArr.length; i++) {
         if (reserveArr[i] == address(reserve)) {
           isReserveAdded = true;
+          break;
         }
       }
       require(isReserveAdded, "Must add this reserve to general reserve first");
@@ -198,8 +199,8 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
     /// @dev allow or prevent a specific reserve to trade a pair of tokens
     /// @param reserve The reserve address.
     /// @param token token address
-    /// @param tomoToToken will it support ether to token trade
-    /// @param tokenToTomo will it support token to ether trade
+    /// @param tomoToToken will it support tomo to token trade
+    /// @param tokenToTomo will it support token to tomo trade
     /// @param add If true then list this pair, otherwise unlist it.
     function listPairForReserve(address reserve, TRC20 token, bool tomoToToken, bool tokenToTomo, bool add)
         public onlyAdmin
@@ -329,13 +330,11 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
     }
 
     function getReservesPerTokenSrcCount(TRC20 token) public view returns(uint) {
-      address[] memory reserveArr = reservesPerTokenSrc[token];
-      return reserveArr.length;
+      return reservesPerTokenSrc[token].length;
     }
 
     function getReservesPerTokenDestCount(TRC20 token) public view returns(uint) {
-      address[] memory reserveArr = reservesPerTokenDest[token];
-      return reserveArr.length;
+      return reservesPerTokenDest[token].length;
     }
 
     struct BestRateResult {
@@ -445,11 +444,11 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         result.rate = calcRateFromQty(srcAmount, result.destAmount, getDecimals(src), getDecimals(dest));
     }
 
-    function listPairs(address reserve, TRC20 token, bool isTokenToEth, bool add) internal {
+    function listPairs(address reserve, TRC20 token, bool isTokenToTomo, bool add) internal {
         uint i;
         address[] storage reserveArr = reservesPerTokenDest[token];
 
-        if (isTokenToEth) {
+        if (isTokenToTomo) {
             reserveArr = reservesPerTokenSrc[token];
         }
 
@@ -461,6 +460,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
                     //remove
                     reserveArr[i] = reserveArr[reserveArr.length - 1];
                     reserveArr.length--;
+                    break;
                 }
             }
         }
@@ -476,8 +476,8 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
     /* solhint-disable function-max-lines */
     // Most of the lins here are functions calls spread over multiple lines. We find this function readable enough
     //  and keep its size as is.
-    /// @notice use token address TOMO_TOKEN_ADDRESS for ether
-    /// @dev trade api for kyber network.
+    /// @notice use token address TOMO_TOKEN_ADDRESS for tomo
+    /// @dev trade api for network.
     /// @param tradeInput structure of trade inputs
     function trade(TradeInput memory tradeInput) internal returns(uint) {
         require(isEnabled);
@@ -586,8 +586,12 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
           expectedRate);
 
       if (actualSrcAmount < tradeInput.srcAmount) {
-          // if there is "change" send back to trader
-          tradeInput.src.transfer(tradeInput.trader, (tradeInput.srcAmount - actualSrcAmount));
+        //if there is "change" send back to trader
+        if (tradeInput.src == TOMO_TOKEN_ADDRESS) {
+          tradeInput.trader.transfer(tradeInput.srcAmount - actualSrcAmount);
+        } else {
+          require(tradeInput.src.transfer(tradeInput.trader, (tradeInput.srcAmount - actualSrcAmount)));
+        }
       }
 
       // verify trade size is smaller than user cap, dest is always TOMO

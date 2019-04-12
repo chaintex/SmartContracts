@@ -124,6 +124,7 @@ let compactSellArr = [];
 
 let oldBaseBuy;
 let oldBaseSell;
+let fixedFeeSharing;
 
 contract('Network', function(accounts) {
     it("should init globals. init 2 ConversionRates Inst, init tokens and add to pricing inst. set basic data per token.", async function () {
@@ -138,6 +139,8 @@ contract('Network', function(accounts) {
         maker1 = accounts[8];
 
         currentBlock = priceUpdateBlock = await Helper.getCurrentBlock();
+
+        fixedFeeSharing = await FeeSharing.new(admin, networkProxy);
 
 //        console.log("current block: " + currentBlock);
         //init contracts
@@ -347,7 +350,7 @@ contract('Network', function(accounts) {
         whiteList = await WhiteList.new(admin);
         await whiteList.addOperator(operator);
         await whiteList.setCategoryCap(0, capWei, {from:operator});
-        await whiteList.setSgdToEthRate(sgdToEthRate, {from:operator});
+        await whiteList.setSgdToTomoRate(sgdToEthRate, {from:operator});
 
         expectedRate = await ExpectedRate.new(network.address, admin);
         await network.setWhiteList(whiteList.address, {from: admin});
@@ -1760,7 +1763,7 @@ contract('Network', function(accounts) {
         await whiteList.setCategoryCap(2, 1, {from:operator}); //1 sgd
 
         //set low wei to sgd rate.
-        await whiteList.setSgdToEthRate(10, {from: operator});
+        await whiteList.setSgdToTomoRate(10, {from: operator});
 
         //perform trade
         try {
@@ -1772,7 +1775,7 @@ contract('Network', function(accounts) {
         }
 
         //set normal wei to sgd rate.
-        await whiteList.setSgdToEthRate(30000, {from: operator});
+        await whiteList.setSgdToTomoRate(30000, {from: operator});
         await whiteList.setCategoryCap(2, 100, {from:operator}); //1 sgd
 
         //see trade success with good gas price
@@ -2842,21 +2845,16 @@ contract('Network', function(accounts) {
       });
 
       it("Should test can init fee holder, set fee holder to network and receive fee as expected", async function() {
-        console.log("Init fee sharing");
-        let feeSharing = await FeeSharing.new(admin, network);
-        console.log("Set fee sharing");
         try {
           await network.setFeeSharing(zeroAddress, {from: admin});
           assert(false, "throw was expected in line above.")
         } catch(e){
             assert(Helper.isRevertErrorMessage(e), "expected revert but got: " + e);
         }
-        console.log("Done settings fee sharing");
-
-        await network.setFeeSharing(feeSharing, {from: admin});
-        console.log("Successfully set fee holder address");
+        fixedFeeSharing.setNetworkContract(network.address, {from: admin});
+        await network.setFeeSharing(fixedFeeSharing.address, {from: admin});
         let feeHolder = await network.feeSharing();
-        assert.equal(feeHolder.toLowerCase(), feeSharing.toLowerCase(), "Fee holder is not correct");
+        assert.equal(feeHolder.toLowerCase(), fixedFeeSharing.address.toLowerCase(), "Fee holder is not correct");
 
         let tokenInd = 0;
         let token = tokens[tokenInd]; //choose some token
@@ -2884,39 +2882,6 @@ contract('Network', function(accounts) {
         let expectedBalanceAfter = new BigNumber(networkBalBefore).plus(expectedFee);
 
         let networkBalAfter = await Helper.getBalancePromise(feeHolder);
-
-        const expectedDiffInPct = new BigNumber(0.03); // diff 3%
-        Helper.assertAbsDiff(networkBalAfter.valueOf(), expectedBalanceAfter.valueOf(), expectedDiffInPct);
-      });
-
-      it("should TOMO balance changes correctly for fee holder if it is receiver of swap tx", async function() {
-        let tokenInd = 0;
-        let token = tokens[tokenInd]; //choose some token
-        let amountTwei = 4000;
-        let maxDestAmount = 100000000;
-
-        let rates = await network.getExpectedRate(tokenAdd[tokenInd], ethAddress, amountTwei);
-        let minRate = rates[0].valueOf();
-
-        // transfer funds to user and approve funds to network
-        await token.transfer(network.address, amountTwei);
-        // await token.approve(network.address, amountTwei, {from:user1})
-
-        let networkBalBefore = await Helper.getBalancePromise(fixedFeeHolder);
-        //perform full amount trade. see token balance on user 1 zero
-        let txData = await network.swap(user1, tokenAdd[tokenInd], amountTwei, ethAddress, fixedFeeHolder, maxDestAmount,
-                            minRate, walletId, {from:networkProxy});
-
-        let feePercent = 25;
-        let tokenDecimal = await token.decimals();
-        let changeInDecimals = new BigNumber(10).pow(tokenDecimal);
-
-        let expectedDestAmount = new BigNumber(amountTwei).mul(rates[0]).div(changeInDecimals).round();
-        let expectedFee = new BigNumber(expectedDestAmount).mul(feePercent).div(10000).round();
-
-        let expectedBalanceAfter = new BigNumber(networkBalBefore).plus(expectedFee).plus(expectedDestAmount);
-
-        let networkBalAfter = await Helper.getBalancePromise(fixedFeeHolder);
 
         const expectedDiffInPct = new BigNumber(0.03); // diff 3%
         Helper.assertAbsDiff(networkBalAfter.valueOf(), expectedBalanceAfter.valueOf(), expectedDiffInPct);
