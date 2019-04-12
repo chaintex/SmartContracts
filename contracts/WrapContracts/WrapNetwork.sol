@@ -899,12 +899,8 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
           expectedRate);
 
       if (actualSrcAmount < tradeInput.srcAmount) {
-        //if there is "change" send back to trader
-        if (tradeInput.src == TOMO_TOKEN_ADDRESS) {
-          tradeInput.trader.transfer(tradeInput.srcAmount - actualSrcAmount);
-        } else {
-          require(tradeInput.src.transfer(tradeInput.trader, (tradeInput.srcAmount - actualSrcAmount)));
-        }
+        // src is always a TRC20 token and not TOMO as we already checked if src is TOMO and return above
+        require(tradeInput.src.transfer(tradeInput.trader, (tradeInput.srcAmount - actualSrcAmount)));
       }
 
       // verify trade size is smaller than user cap, dest is always TOMO
