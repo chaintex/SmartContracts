@@ -212,14 +212,14 @@ contract Withdrawable is PermissionGroups {
         emit TokenWithdraw(token, amount, sendTo);
     }
 
-    event EtherWithdraw(uint amount, address sendTo);
+    event TomoWithdraw(uint amount, address sendTo);
 
     /**
      * @dev Withdraw Ethers
      */
-    function withdrawEther(uint amount, address sendTo) external onlyAdmin {
+    function withdrawTomo(uint amount, address sendTo) external onlyAdmin {
         sendTo.transfer(amount);
-        emit EtherWithdraw(amount, sendTo);
+        emit TomoWithdraw(amount, sendTo);
     }
 }
 
@@ -549,7 +549,7 @@ contract LiquidityConversionRates is ConversionRatesInterface, LiquidityFormula,
         if (conversionToken != token) return 0;
 
         if (buy) {
-            // ETH goes in, token goes out
+            // TOMO goes in, token goes out
             deltaEInFp = fromWeiToFp(qtyInSrcWei);
             if (deltaEInFp > maxEthCapBuyInFp) return 0;
 

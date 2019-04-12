@@ -302,14 +302,14 @@ contract Withdrawable is PermissionGroups {
         emit TokenWithdraw(token, amount, sendTo);
     }
 
-    event EtherWithdraw(uint amount, address sendTo);
+    event TomoWithdraw(uint amount, address sendTo);
 
     /**
      * @dev Withdraw Ethers
      */
-    function withdrawEther(uint amount, address sendTo) external onlyAdmin {
+    function withdrawTomo(uint amount, address sendTo) external onlyAdmin {
         sendTo.transfer(amount);
-        emit EtherWithdraw(amount, sendTo);
+        emit TomoWithdraw(amount, sendTo);
     }
 }
 
@@ -369,7 +369,6 @@ contract FeeSharing is Withdrawable, FeeSharingInterface, Utils2, ReentrancyGuar
     event AssignFeeToWallet(address wallet, uint walletFee);
     function handleFees(address wallet)
       public
-      nonReentrant
       payable
       returns(bool)
     {

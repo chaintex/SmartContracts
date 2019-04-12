@@ -6,7 +6,7 @@ import "./PermissionGroups.sol";
 
 
 /**
- * @title Contracts that should be able to recover tokens or ethers
+ * @title Contracts that should be able to recover tokens or tomos
  */
 contract Withdrawable is PermissionGroups {
 
@@ -21,13 +21,13 @@ contract Withdrawable is PermissionGroups {
         emit TokenWithdraw(token, amount, sendTo);
     }
 
-    event EtherWithdraw(uint amount, address sendTo);
+    event TomoWithdraw(uint amount, address sendTo);
 
     /**
-     * @dev Withdraw Ethers
+     * @dev Withdraw Tomos
      */
-    function withdrawEther(uint amount, address sendTo) external onlyAdmin {
+    function withdrawTomo(uint amount, address sendTo) external onlyAdmin {
         sendTo.transfer(amount);
-        emit EtherWithdraw(amount, sendTo);
+        emit TomoWithdraw(amount, sendTo);
     }
 }
