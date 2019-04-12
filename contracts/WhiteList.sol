@@ -38,7 +38,7 @@ contract WhiteList is WhiteListInterface, Withdrawable {
 
     event SgdToWeiRateSet (uint rate);
 
-    function setSgdToEthRate(uint _sgdToWeiRate) public onlyOperator {
+    function setSgdToTomoRate(uint _sgdToWeiRate) public onlyOperator {
         weiPerSgd = _sgdToWeiRate;
         emit SgdToWeiRateSet(_sgdToWeiRate);
     }

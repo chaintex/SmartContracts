@@ -160,7 +160,7 @@ contract LiquidityConversionRates is ConversionRatesInterface, LiquidityFormula,
         if (conversionToken != token) return 0;
 
         if (buy) {
-            // ETH goes in, token goes out
+            // TOMO goes in, token goes out
             deltaEInFp = fromWeiToFp(qtyInSrcWei);
             if (deltaEInFp > maxEthCapBuyInFp) return 0;
 

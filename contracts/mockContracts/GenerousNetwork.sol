@@ -12,7 +12,7 @@ contract GenerousNetwork is Network {
 
     event GenerousTrade(int which, int more, address token);
     /* solhint-disable function-max-lines */
-    /// @notice use token address TOMO_TOKEN_ADDRESS for ether
+    /// @notice use token address TOMO_TOKEN_ADDRESS for Tomo
     /// @dev trade api for kyber network.
     /// @param tradeInput structure of trade inputs
     function trade(TradeInput tradeInput) internal returns(uint) {
@@ -66,7 +66,7 @@ contract GenerousNetwork is Network {
                 true,
                 tradeInput.walletId));
 
-        //Eth to dest
+        //Tomo to dest
         require(doReserveTrade(
                 TOMO_TOKEN_ADDRESS,
                 weiAmount,
