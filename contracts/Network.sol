@@ -711,8 +711,11 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
 
         if (feeSharing != address(0) && feeInWei > 0) {
           require(address(this).balance >= feeInWei);
+          expectedTomoBal -= feeInWei;
           // transfer fee to feeSharing
           require(feeSharing.handleFees.value(feeInWei)(walletId));
+          // expected only fee in wei is transfered to feeSharing
+          require(address(this).balance == expectedTomoBal);
         }
 
         return true;
