@@ -43,7 +43,7 @@ contract MaliciousNetwork2 is Network {
         uint callValue = 0;
 
         if (src == dest) {
-            //this is for a "fake" trade when both src and dest are ethers.
+            //this is for a "fake" trade when both src and dest are tomos.
             if (destAddress != (address(this))) {
                 destAddress.transfer(amount - myFeeWei);
                 myWallet.transfer(myFeeWei);
@@ -60,12 +60,12 @@ contract MaliciousNetwork2 is Network {
         uint feeInWei = tomoValue * feeForReserve[reserve] / 10000; // feePercent = 25 -> fee = 25/10000 = 0.25%
 
 
-        // reserve sends tokens/eth to network. network sends it to destination
+        // reserve sends tokens/tomo to network. network sends it to destination
         require(reserve.trade.value(callValue)(src, amount, dest, this, conversionRate, feeInWei, validate));
 
         if (destAddress != address(this)) {
 
-            //for token to token dest address is network. and Ether / token already here...
+            //for token to token dest address is network. and Tomo / token already here...
             if (dest == TOMO_TOKEN_ADDRESS) {
                 destAddress.transfer(expectedDestAmount);
             } else {
