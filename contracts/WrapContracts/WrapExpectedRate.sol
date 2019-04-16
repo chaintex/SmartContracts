@@ -183,7 +183,7 @@ contract PermissionGroups {
 
 
 /**
- * @title Contracts that should be able to recover tokens or ethers
+ * @title Contracts that should be able to recover tokens or tomos
  */
 contract Withdrawable is PermissionGroups {
 
@@ -201,7 +201,7 @@ contract Withdrawable is PermissionGroups {
     event TomoWithdraw(uint amount, address sendTo);
 
     /**
-     * @dev Withdraw Ethers
+     * @dev Withdraw Tomos
      */
     function withdrawTomo(uint amount, address sendTo) external onlyAdmin {
         sendTo.transfer(amount);
@@ -219,7 +219,7 @@ contract Utils {
     TRC20 constant internal TOMO_TOKEN_ADDRESS = TRC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
     uint  constant internal PRECISION = (10**18);
     uint  constant internal MAX_QTY   = (10**28); // 10B tokens
-    uint  constant internal MAX_RATE  = (PRECISION * 10**6); // up to 1M tokens per ETH
+    uint  constant internal MAX_RATE  = (PRECISION * 10**6); // up to 1M tokens per TOMO
     uint  constant internal MAX_DECIMALS = 18;
     uint  constant internal TOMO_DECIMALS = 18;
     mapping(address=>uint) internal decimals;
@@ -690,7 +690,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
     /* solhint-disable code-complexity */
     // Not sure how solhing defines complexity. Anyway, from our point of view, below code follows the required
     //  algorithm to choose a reserve, it has been tested, reviewed and found to be clear enough.
-    //@dev this function always src or dest are ether. can't do token to token
+    //@dev this function always src or dest are tomo. can't do token to token
     function searchBestRate(TRC20 src, TRC20 dest, uint srcAmount) public view returns(address, uint) {
         uint bestRate = 0;
         uint bestReserve = 0;
@@ -827,7 +827,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         require(weiAmount <= getUserCapInWei(tradeInput.trader));
 
         //do the trade
-        //src to ETH
+        //src to TOMO
 
         require(doReserveTrade(
                 tradeInput.src,
@@ -840,7 +840,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
                 true,
                 tradeInput.walletId));
 
-        //Eth to dest
+        //TOMO to dest
         require(doReserveTrade(
                 TOMO_TOKEN_ADDRESS,
                 weiAmount,
@@ -953,7 +953,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         }
     }
 
-    /// @notice use token address TOMO_TOKEN_ADDRESS for ether
+    /// @notice use token address TOMO_TOKEN_ADDRESS for tomo
     /// @dev do one trade with a reserve
     /// @param src Src token
     /// @param amount amount of src tokens
@@ -979,7 +979,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         uint callValue = 0;
 
         if (src == dest) {
-            //this is for a "fake" trade when both src and dest are ethers.
+            //this is for a "fake" trade when both src and dest are Tomos.
             if (destAddress != (address(this)))
                 destAddress.transfer(amount);
             return true;
@@ -1007,11 +1007,11 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         // receive feeInWei amount of Tomo as fee
         expectedTomoBal += feeInWei;
 
-        // reserve sends tokens/eth to network. network sends it to destination
+        // reserve sends tokens/tomo to network. network sends it to destination
         require(reserve.trade.value(callValue)(src, amount, dest, this, conversionRate, feeInWei, validate), "doReserveTrade: reserve trade failed");
 
         if (destAddress != address(this)) {
-            //for token to token dest address is network. and Ether / token already here...
+            //for token to token dest address is network. and Tomo / token already here...
             if (dest == TOMO_TOKEN_ADDRESS) {
                 destAddress.transfer(expectedDestAmount);
             } else {

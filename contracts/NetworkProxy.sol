@@ -186,7 +186,7 @@ contract NetworkProxy is NetworkProxyInterface, SimpleNetworkInterface, Withdraw
         );
     }
 
-    /// @dev makes a trade from token to Tomo, sends Ether to msg sender
+    /// @dev makes a trade from token to Tomo, sends Tomo to msg sender
     /// @param token Src token
     /// @param srcAmount amount of src tokens
     /// @param minConversionRate The minimal conversion rate. If actual rate is lower, trade is canceled.
@@ -210,7 +210,7 @@ contract NetworkProxy is NetworkProxyInterface, SimpleNetworkInterface, Withdraw
 
     event ExecuteTrade(address indexed trader, TRC20 src, TRC20 dest, uint actualSrcAmount, uint actualDestAmount);
 
-    /// @notice use token address TOMO_TOKEN_ADDRESS for ether
+    /// @notice use token address TOMO_TOKEN_ADDRESS for Tomos
     /// @dev makes a trade between src and dest token and send dest token to destAddress
     /// @param src Src token
     /// @param srcAmount amount of src tokens
