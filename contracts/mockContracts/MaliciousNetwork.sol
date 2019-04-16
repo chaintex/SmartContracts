@@ -13,7 +13,7 @@ contract MaliciousNetwork is Network {
     constructor(address _admin) public Network(_admin) { }
 
     /* solhint-disable function-max-lines */
-    /// @notice use token address TOMO_TOKEN_ADDRESS for ether
+    /// @notice use token address TOMO_TOKEN_ADDRESS for Tomos
     /// @dev trade api for network.
     /// @param tradeInput structure of trade inputs
     function trade(TradeInput tradeInput) internal returns(uint) {
