@@ -456,11 +456,11 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
 
     event AddReserveToNetwork(ReserveInterface reserve, bool add);
 
-    /// @notice can be called only by admin
+    /// @notice can be called only by operator
     /// @dev add or deletes a reserve to/from the network.
     /// @param reserve The reserve address.
     /// @param add If true, the add reserve. Otherwise delete reserve.
-    function addReserve(ReserveInterface reserve, bool add) public onlyAdmin {
+    function addReserve(ReserveInterface reserve, bool add) public onlyOperator {
 
         if (add) {
             require(!isReserve[reserve]);
@@ -482,7 +482,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         }
     }
 
-    // @notice can be called only by admin
+    // @notice can be called only by operator
     // @dev add or delete a reserve for fee to/from the network
     // @dev will need to call separately function addReserve
     // @dev this reserve must list pair (Tomo, token) to support trade from Tomo -> token
@@ -490,7 +490,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
     // @param token: token to map with the reserve
 
     event AddFeeReserveToNetwork(ReserveInterface reserve, TRC20 token);
-    function addFeeReserve(ReserveInterface reserve, TRC20 token) public onlyAdmin {
+    function addFeeReserve(ReserveInterface reserve, TRC20 token) public onlyOperator {
       require(token != address(0), "Token can not be address 0x0");
       require(isReserve[reserve] == true, "Reserve is not an added reserve");
       address[] memory reserveArr = reservesPerTokenDest[token];
@@ -508,7 +508,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
 
     event ListReservePairs(address reserve, TRC20 src, TRC20 dest, bool add);
 
-    /// @notice can be called only by admin
+    /// @notice can be called only by operator
     /// @dev allow or prevent a specific reserve to trade a pair of tokens
     /// @param reserve The reserve address.
     /// @param token token address
@@ -516,7 +516,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
     /// @param tokenToTomo will it support token to tomo trade
     /// @param add If true then list this pair, otherwise unlist it.
     function listPairForReserve(address reserve, TRC20 token, bool tomoToToken, bool tokenToTomo, bool add)
-        public onlyAdmin
+        public onlyOperator
     {
         require(isReserve[reserve]);
 
