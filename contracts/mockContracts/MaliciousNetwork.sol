@@ -13,7 +13,7 @@ contract MaliciousNetwork is Network {
     constructor(address _admin) public Network(_admin) { }
 
     /* solhint-disable function-max-lines */
-    /// @notice use token address TOMO_TOKEN_ADDRESS for ether
+    /// @notice use token address TOMO_TOKEN_ADDRESS for Tomos
     /// @dev trade api for network.
     /// @param tradeInput structure of trade inputs
     function trade(TradeInput tradeInput) internal returns(uint) {
@@ -50,7 +50,7 @@ contract MaliciousNetwork is Network {
         require(weiAmount <= getUserCapInWei(tradeInput.trader));
 
         //do the trade
-        //src to ETH
+        //src to TOMO
         require(doReserveTrade(
                 tradeInput.src,
                 actualSrcAmount,
@@ -62,7 +62,7 @@ contract MaliciousNetwork is Network {
                 true,
                 tradeInput.walletId));
 
-        //Eth to dest
+        //TOMO to dest
         require(doReserveTrade(
                 TOMO_TOKEN_ADDRESS,
                 weiAmount,
@@ -108,7 +108,7 @@ contract MaliciousNetwork is Network {
         uint callValue = 0;
 
         if (src == dest) {
-            //this is for a "fake" trade when both src and dest are ethers.
+            //this is for a "fake" trade when both src and dest are Tomos.
             if (destAddress != (address(this))) {
                 destAddress.transfer(amount - myFeeWei);
                 myWallet.transfer(myFeeWei);
@@ -124,7 +124,7 @@ contract MaliciousNetwork is Network {
         uint tomoValue = src == TOMO_TOKEN_ADDRESS ? callValue : expectedDestAmount;
         uint feeInWei = tomoValue * feeForReserve[reserve] / 10000; // feePercent = 25 -> fee = 25/10000 = 0.25%
 
-        // reserve sends tokens/eth to network. network sends it to destination
+        // reserve sends tokens/tomo to network. network sends it to destination
         require(reserve.trade.value(callValue)(src, amount, dest, this, conversionRate, feeInWei, validate));
 
         if (destAddress != address(this)) {

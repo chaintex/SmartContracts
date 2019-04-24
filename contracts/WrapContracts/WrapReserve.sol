@@ -182,7 +182,7 @@ contract PermissionGroups {
 
 
 /**
- * @title Contracts that should be able to recover tokens or ethers
+ * @title Contracts that should be able to recover tokens or tomos
  */
 contract Withdrawable is PermissionGroups {
 
@@ -197,14 +197,14 @@ contract Withdrawable is PermissionGroups {
         emit TokenWithdraw(token, amount, sendTo);
     }
 
-    event EtherWithdraw(uint amount, address sendTo);
+    event TomoWithdraw(uint amount, address sendTo);
 
     /**
-     * @dev Withdraw Ethers
+     * @dev Withdraw Tomos
      */
-    function withdrawEther(uint amount, address sendTo) external onlyAdmin {
+    function withdrawTomo(uint amount, address sendTo) external onlyAdmin {
         sendTo.transfer(amount);
-        emit EtherWithdraw(amount, sendTo);
+        emit TomoWithdraw(amount, sendTo);
     }
 }
 
@@ -218,7 +218,7 @@ contract Utils {
     TRC20 constant internal TOMO_TOKEN_ADDRESS = TRC20(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee);
     uint  constant internal PRECISION = (10**18);
     uint  constant internal MAX_QTY   = (10**28); // 10B tokens
-    uint  constant internal MAX_RATE  = (PRECISION * 10**6); // up to 1M tokens per ETH
+    uint  constant internal MAX_RATE  = (PRECISION * 10**6); // up to 1M tokens per TOMO
     uint  constant internal MAX_DECIMALS = 18;
     uint  constant internal TOMO_DECIMALS = 18;
     mapping(address=>uint) internal decimals;

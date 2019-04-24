@@ -124,6 +124,7 @@ let compactSellArr = [];
 
 let oldBaseBuy;
 let oldBaseSell;
+let fixedFeeSharing;
 
 contract('Network', function(accounts) {
     it("should init globals. init 2 ConversionRates Inst, init tokens and add to pricing inst. set basic data per token.", async function () {
@@ -138,6 +139,8 @@ contract('Network', function(accounts) {
         maker1 = accounts[8];
 
         currentBlock = priceUpdateBlock = await Helper.getCurrentBlock();
+
+        fixedFeeSharing = await FeeSharing.new(admin, networkProxy);
 
 //        console.log("current block: " + currentBlock);
         //init contracts
@@ -271,7 +274,7 @@ contract('Network', function(accounts) {
 
     it("should init network and reserves and set all reserve data including balances", async function () {
         network = await Network.new(admin);
-        await network.addOperator(operator);
+        await network.addOperator(operator, {from: admin});
 
         reserve1 = await Reserve.new(network.address, pricing1.address, admin);
         reserve2 = await Reserve.new(network.address, pricing2.address, admin);
@@ -338,8 +341,8 @@ contract('Network', function(accounts) {
 
     it("should init network data, list token pairs.", async function () {
         // add reserves
-        await network.addReserve(reserve1.address, true, {from: admin});
-        await network.addReserve(reserve2.address, true, {from: admin});
+        await network.addReserve(reserve1.address, true, {from: operator});
+        await network.addReserve(reserve2.address, true, {from: operator});
 
         await network.setNetworkProxy(networkProxy);
 
@@ -347,7 +350,7 @@ contract('Network', function(accounts) {
         whiteList = await WhiteList.new(admin);
         await whiteList.addOperator(operator);
         await whiteList.setCategoryCap(0, capWei, {from:operator});
-        await whiteList.setSgdToEthRate(sgdToEthRate, {from:operator});
+        await whiteList.setSgdToTomoRate(sgdToEthRate, {from:operator});
 
         expectedRate = await ExpectedRate.new(network.address, admin);
         await network.setWhiteList(whiteList.address, {from: admin});
@@ -359,8 +362,8 @@ contract('Network', function(accounts) {
 
         //list tokens per reserve
         for (let i = 0; i < numTokens; i++) {
-            await network.listPairForReserve(reserve1.address, tokenAdd[i], true, true, true, {from: admin});
-            await network.listPairForReserve(reserve2.address, tokenAdd[i], true, true, true, {from: admin});
+            await network.listPairForReserve(reserve1.address, tokenAdd[i], true, true, true, {from: operator});
+            await network.listPairForReserve(reserve2.address, tokenAdd[i], true, true, true, {from: operator});
         }
     });
 
@@ -376,7 +379,7 @@ contract('Network', function(accounts) {
                                 )
                             });
 
-        txData = await tempNetwork.addReserve(reserve1.address, true, {from: admin});
+        txData = await tempNetwork.addReserve(reserve1.address, true, {from: operator});
         // console.log("Added reserve");
         truffleAssert.eventEmitted(txData, 'AddReserveToNetwork', (ev) => {
                                         return (
@@ -395,7 +398,7 @@ contract('Network', function(accounts) {
                                     });
 
         //list token
-        txData = await tempNetwork.listPairForReserve(reserve1.address, tokenAdd[0], true, true, true, {from: admin});
+        txData = await tempNetwork.listPairForReserve(reserve1.address, tokenAdd[0], true, true, true, {from: operator});
         // console.log("List pair 1");
         assert.equal(txData.logs[0].event, 'ListReservePairs');
         assert.equal(txData.logs[0].args.src.toLowerCase(), ethAddress.toLowerCase());
@@ -405,7 +408,7 @@ contract('Network', function(accounts) {
         assert.equal(txData.logs[1].args.src.toLowerCase(), tokenAdd[0].toLowerCase());
         assert.equal(txData.logs[1].args.add, true);
 
-        txData = await tempNetwork.listPairForReserve(reserve1.address, tokenAdd[0], true, true, false, {from: admin});
+        txData = await tempNetwork.listPairForReserve(reserve1.address, tokenAdd[0], true, true, false, {from: operator});
         // console.log("List pair 2");
         assert.equal(txData.logs[0].args.src.toLowerCase(), ethAddress.toLowerCase());
         assert.equal(txData.logs[0].args.dest.toLowerCase(), tokenAdd[0].toLowerCase());
@@ -414,19 +417,19 @@ contract('Network', function(accounts) {
         assert.equal(txData.logs[1].args.src.toLowerCase(), tokenAdd[0].toLowerCase());
         assert.equal(txData.logs[1].args.add, false);
 
-        txData = await tempNetwork.listPairForReserve(reserve1.address, tokenAdd[1], true, false, true, {from: admin});
+        txData = await tempNetwork.listPairForReserve(reserve1.address, tokenAdd[1], true, false, true, {from: operator});
         // console.log("List pair 3");
         assert.equal(txData.logs[0].args.src.toLowerCase(), ethAddress.toLowerCase());
         assert.equal(txData.logs[0].args.dest.toLowerCase(), tokenAdd[1].toLowerCase());
         assert.equal(txData.logs[0].args.add, true);
 
-        txData = await tempNetwork.listPairForReserve(reserve1.address, tokenAdd[1], true, false, false, {from: admin});
+        txData = await tempNetwork.listPairForReserve(reserve1.address, tokenAdd[1], true, false, false, {from: operator});
         // console.log("List pair 4");
         assert.equal(txData.logs[0].args.src.toLowerCase(), ethAddress.toLowerCase());
         assert.equal(txData.logs[0].args.dest.toLowerCase(), tokenAdd[1].toLowerCase());
         assert.equal(txData.logs[0].args.add, false);
 
-        txData = await tempNetwork.listPairForReserve(reserve1.address, tokenAdd[2], false, true, true, {from: admin});
+        txData = await tempNetwork.listPairForReserve(reserve1.address, tokenAdd[2], false, true, true, {from: operator});
         // console.log("List pair 5");
         assert.equal(txData.logs[0].args.dest.toLowerCase(), ethAddress.toLowerCase());
         assert.equal(txData.logs[0].args.src.toLowerCase(), tokenAdd[2].toLowerCase());
@@ -1266,7 +1269,7 @@ contract('Network', function(accounts) {
         assert.equal(reserve2.address, reserveGet);
 
         //unlist reserve 1 both buy and sell.
-        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], true, true, false, {from: admin});
+        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], true, true, false, {from: operator});
         reserveGet = await network.reservesPerTokenDest(tokenAddress, 0);
         assert.equal(reserve2.address, reserveGet);
 
@@ -1290,7 +1293,7 @@ contract('Network', function(accounts) {
         }
 
         //unlist reserve2 only eth to token
-        await network.listPairForReserve(reserve2.address, tokenAdd[tokenInd], true, false, false, {from: admin
+        await network.listPairForReserve(reserve2.address, tokenAdd[tokenInd], true, false, false, {from: operator
         });
 
         // here non listed
@@ -1315,7 +1318,7 @@ contract('Network', function(accounts) {
         }
 
         //list back reserve 2 buy and sell. see not added twice
-        await network.listPairForReserve(reserve2.address, tokenAdd[tokenInd], true, true, true, {from: admin});
+        await network.listPairForReserve(reserve2.address, tokenAdd[tokenInd], true, true, true, {from: operator});
         reserveGet = await network.reservesPerTokenDest(tokenAddress, 0);
         assert.equal(reserve2.address, reserveGet);
 
@@ -1339,7 +1342,7 @@ contract('Network', function(accounts) {
         }
 
         //list back reserve 1 token to eth
-        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], false, true, true, {from: admin});
+        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], false, true, true, {from: operator});
         reserveGet = await network.reservesPerTokenDest(tokenAddress, 0);
         assert.equal(reserve2.address, reserveGet);
 
@@ -1365,7 +1368,7 @@ contract('Network', function(accounts) {
         }
 
         //list back reserve 1 eth to token
-        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], true, false, true, {from: admin});
+        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], true, false, true, {from: operator});
         reserveGet = await network.reservesPerTokenDest(tokenAddress, 0);
         assert.equal(reserve2.address, reserveGet);
         reserveGet = await network.reservesPerTokenDest(tokenAddress, 1);
@@ -1395,16 +1398,16 @@ contract('Network', function(accounts) {
 
     it("should test can't list pairs if reserve not added.", async function () {
         //here list should fail
-        await network.addReserve(reserve3.address, false, {from: admin});
+        await network.addReserve(reserve3.address, false, {from: operator});
         try {
-            await network.listPairForReserve(reserve3.address, uniqueToken.address, true, true, true, {from: admin});
+            await network.listPairForReserve(reserve3.address, uniqueToken.address, true, true, true, {from: operator});
             assert(false, "throw was expected in line above.")
         } catch(e){
             assert(Helper.isRevertErrorMessage(e), "expected throw but got: " + e);
         }
 
-        await network.addReserve(reserve3.address, true, {from: admin});
-        await network.listPairForReserve(reserve3.address, uniqueToken.address, true, true, true, {from: admin});
+        await network.addReserve(reserve3.address, true, {from: operator});
+        await network.listPairForReserve(reserve3.address, uniqueToken.address, true, true, true, {from: operator});
         await network.setFeePercent(reserve3.address, 0, {from: admin});
 
         reserveGet = await network.reservesPerTokenSrc(uniqueToken.address, 0);
@@ -1416,7 +1419,7 @@ contract('Network', function(accounts) {
     //
     //     //here list should revert
     //     try {
-    //         await network.listPairForReserve(reserve3.address, failingToken.address, true, true, true, {from: admin});
+    //         await network.listPairForReserve(reserve3.address, failingToken.address, true, true, true, {from: operator});
     //         assert(false, "throw was expected in line above.")
     //     } catch(e){
     //         assert(Helper.isRevertErrorMessage(e), "expected throw but got: " + e);
@@ -1424,7 +1427,7 @@ contract('Network', function(accounts) {
     //
     //     // remove listing should revert
     //     try {
-    //         await network.listPairForReserve(reserve3.address, failingToken.address, false, true, false, {from: admin});
+    //         await network.listPairForReserve(reserve3.address, failingToken.address, false, true, false, {from: operator});
     //         assert(false, "throw was expected in line above.")
     //     } catch(e){
     //         assert(Helper.isRevertErrorMessage(e), "expected throw but got: " + e);
@@ -1443,7 +1446,7 @@ contract('Network', function(accounts) {
         assert(rate > 0);
 
         //first unlist token
-        await network.listPairForReserve(reserve3.address, uniqueToken.address, true, true, false, {from: admin});
+        await network.listPairForReserve(reserve3.address, uniqueToken.address, true, true, false, {from: operator});
 
         let rates = await network.getExpectedRate(ethAddress, testedToken, amount);
         assert.equal(0, rates[0].valueOf());
@@ -1451,28 +1454,28 @@ contract('Network', function(accounts) {
         assert.equal(0, rates[0].valueOf());
 
         //list token. buy (eth to token)
-        await network.listPairForReserve(reserve3.address, testedToken, true, false, true, {from: admin});
+        await network.listPairForReserve(reserve3.address, testedToken, true, false, true, {from: operator});
         rates = await network.getExpectedRate(ethAddress, testedToken, amount);
         assert(rates[0].valueOf() > 0);
         rates = await network.getExpectedRate(testedToken, ethAddress, amount);
         assert(rates[0].valueOf() == 0);
 
         //list token. sell
-        await network.listPairForReserve(reserve3.address, testedToken, false, true, true, {from: admin});
+        await network.listPairForReserve(reserve3.address, testedToken, false, true, true, {from: operator});
         rates = await network.getExpectedRate(ethAddress, testedToken, amount);
         assert(rates[0].valueOf() > 0);
         rates = await network.getExpectedRate(testedToken, ethAddress, amount);
         assert(rates[0].valueOf() > 0);
 
         //unlist token. buy
-        await network.listPairForReserve(reserve3.address, testedToken, true, false, false, {from: admin});
+        await network.listPairForReserve(reserve3.address, testedToken, true, false, false, {from: operator});
         rates = await network.getExpectedRate(ethAddress, testedToken, amount);
         assert(rates[0].valueOf() == 0);
         rates = await network.getExpectedRate(testedToken, ethAddress, amount);
         assert(rates[0].valueOf() > 0);
 
         //unlist token. sell
-        await network.listPairForReserve(reserve3.address, testedToken, false, true, false, {from: admin});
+        await network.listPairForReserve(reserve3.address, testedToken, false, true, false, {from: operator});
         rates = await network.getExpectedRate(ethAddress, testedToken, amount);
         assert(rates[0].valueOf() == 0);
         rates = await network.getExpectedRate(testedToken, ethAddress, amount);
@@ -1505,7 +1508,7 @@ contract('Network', function(accounts) {
         let user2ListedBalance = new BigNumber(await listedToken.balanceOf(user2));
 
         //first unlist token
-        await network.listPairForReserve(reserve3.address, uniqueToken.address, true, true, false, {from: admin});
+        await network.listPairForReserve(reserve3.address, uniqueToken.address, true, true, false, {from: operator});
         let rates = await network.getExpectedRate(listedToken.address, testedToken, amount);
         assert.equal(0, rates[0].valueOf());
         rates = await network.getExpectedRate(testedToken, listedToken.address, amount);
@@ -1541,8 +1544,7 @@ contract('Network', function(accounts) {
         user2ListedBalance = user2ListedBalanceAfter;
 
         //list token. buy (eth to token)
-        await network.listPairForReserve(reserve3.address, testedToken, true, false, true, {from: admin
-        });
+        await network.listPairForReserve(reserve3.address, testedToken, true, false, true, {from: operator});
         rates = await network.getExpectedRate(listedToken.address, testedToken, amount);
         assert(rates[0].valueOf() > 0);
         rates = await network.getExpectedRate(testedToken, listedToken.address, amount);
@@ -1573,7 +1575,7 @@ contract('Network', function(accounts) {
         user1ListedBalance = user1ListedBalanceAfter;
 
         //list token. sell
-        await network.listPairForReserve(reserve3.address, testedToken, false, true, true, {from: admin});
+        await network.listPairForReserve(reserve3.address, testedToken, false, true, true, {from: operator});
         rates = await network.getExpectedRate(listedToken.address, testedToken, amount);
         assert(rates[0].valueOf() > 0);
         rates = await network.getExpectedRate(testedToken, listedToken.address, amount);
@@ -1602,7 +1604,7 @@ contract('Network', function(accounts) {
         user2ListedBalance = user2ListedBalanceAfter;
 
         //unlist token. buy
-        await network.listPairForReserve(reserve3.address, testedToken, true, false, false, {from: admin});
+        await network.listPairForReserve(reserve3.address, testedToken, true, false, false, {from: operator});
         rates = await network.getExpectedRate(listedToken.address, testedToken, amount);
         assert(rates[0].valueOf() == 0);
         rates = await network.getExpectedRate(testedToken, listedToken.address, amount);
@@ -1635,7 +1637,7 @@ contract('Network', function(accounts) {
         user2ListedBalance = user2ListedBalanceAfter;
 
         //unlist token. sell
-        await network.listPairForReserve(reserve3.address, testedToken, false, true, false, {from: admin});
+        await network.listPairForReserve(reserve3.address, testedToken, false, true, false, {from: operator});
         rates = await network.getExpectedRate(listedToken.address, testedToken, amount);
         assert(rates[0].valueOf() == 0);
         rates = await network.getExpectedRate(testedToken, listedToken.address, amount);
@@ -1675,8 +1677,8 @@ contract('Network', function(accounts) {
         let minConversionRate = 0;
 
         //unlist and verify trade reverted.
-        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], true, false, false, {from: admin});
-        await network.listPairForReserve(reserve2.address, tokenAdd[tokenInd], true, false, false, {from: admin});
+        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], true, false, false, {from: operator});
+        await network.listPairForReserve(reserve2.address, tokenAdd[tokenInd], true, false, false, {from: operator});
 
         //perform trade
         try {
@@ -1688,8 +1690,8 @@ contract('Network', function(accounts) {
         }
 
         //list back
-        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], true, false, true, {from: admin});
-        await network.listPairForReserve(reserve2.address, tokenAdd[tokenInd], true, false, true, {from: admin});
+        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], true, false, true, {from: operator});
+        await network.listPairForReserve(reserve2.address, tokenAdd[tokenInd], true, false, true, {from: operator});
 
         await network.swap(user1, ethAddress, amountWei, tokenAdd[tokenInd], user2, 2000,
                 minConversionRate, walletId, {from:networkProxy, value:amountWei});
@@ -1707,8 +1709,8 @@ contract('Network', function(accounts) {
 //        await token.approve(network.address, amountTWei*2, {from:user1});
 
         //unlist and verify trade reverted.
-        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], false, true, false, {from: admin});
-        await network.listPairForReserve(reserve2.address, tokenAdd[tokenInd], false, true, false, {from: admin});
+        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], false, true, false, {from: operator});
+        await network.listPairForReserve(reserve2.address, tokenAdd[tokenInd], false, true, false, {from: operator});
 
         //perform trade
         try {
@@ -1720,8 +1722,8 @@ contract('Network', function(accounts) {
         }
 
         //list back
-        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], false, true, true, {from: admin});
-        await network.listPairForReserve(reserve2.address, tokenAdd[tokenInd], false, true, true, {from: admin});
+        await network.listPairForReserve(reserve1.address, tokenAdd[tokenInd], false, true, true, {from: operator});
+        await network.listPairForReserve(reserve2.address, tokenAdd[tokenInd], false, true, true, {from: operator});
 
         await network.swap(user1, tokenAdd[tokenInd], amountTWei, ethAddress, user2, maxDestAmount,
             minConversionRate, walletId, {from:networkProxy});
@@ -1760,7 +1762,7 @@ contract('Network', function(accounts) {
         await whiteList.setCategoryCap(2, 1, {from:operator}); //1 sgd
 
         //set low wei to sgd rate.
-        await whiteList.setSgdToEthRate(10, {from: operator});
+        await whiteList.setSgdToTomoRate(10, {from: operator});
 
         //perform trade
         try {
@@ -1772,7 +1774,7 @@ contract('Network', function(accounts) {
         }
 
         //set normal wei to sgd rate.
-        await whiteList.setSgdToEthRate(30000, {from: operator});
+        await whiteList.setSgdToTomoRate(30000, {from: operator});
         await whiteList.setCategoryCap(2, 100, {from:operator}); //1 sgd
 
         //see trade success with good gas price
@@ -1928,15 +1930,15 @@ contract('Network', function(accounts) {
 
         //try adding existing reserve
         try {
-            await network.addReserve(reserve1.address, true, {from: admin});
+            await network.addReserve(reserve1.address, true, {from: operator});
             assert(false, "throw was expected in line above.");
         } catch(e){
             assert(Helper.isRevertErrorMessage(e), "expected throw but got: " + e);
         }
 
         // remove reserves and see same add success.
-        await network.addReserve(reserve1.address, false, {from: admin});
-        await network.addReserve(reserve1.address, true, {from: admin})
+        await network.addReserve(reserve1.address, false, {from: operator});
+        await network.addReserve(reserve1.address, true, {from: operator})
         await network.setFeePercent(reserve1.address, 0, {from: admin});
     });
 
@@ -1946,17 +1948,17 @@ contract('Network', function(accounts) {
         assert.equal(numRes.valueOf(), 3, "unexpected number of reserves.");
 
         // remove reserves
-        await network.addReserve(reserve1.address, false, {from: admin});
-        await network.addReserve(reserve2.address, false, {from: admin});
-        await network.addReserve(reserve3.address, false, {from: admin});
+        await network.addReserve(reserve1.address, false, {from: operator});
+        await network.addReserve(reserve2.address, false, {from: operator});
+        await network.addReserve(reserve3.address, false, {from: operator});
 
         numRes = await network.getNumReserves();
 
         assert.equal(numRes.valueOf(), 0, "unexpected number of reserves.");
 
-        await network.addReserve(reserve1.address, true, {from: admin});
-        await network.addReserve(reserve2.address, true, {from: admin});
-        await network.addReserve(reserve3.address, true, {from: admin});
+        await network.addReserve(reserve1.address, true, {from: operator});
+        await network.addReserve(reserve2.address, true, {from: operator});
+        await network.addReserve(reserve3.address, true, {from: operator});
 
         await network.setFeePercent(reserve1.address, 0, {from: admin});
         await network.setFeePercent(reserve2.address, 0, {from: admin});
@@ -2728,7 +2730,7 @@ contract('Network', function(accounts) {
           assert.equal(recordedFeePercent, feePercent, "Fee percent for reserve2 is not set correctly");
 
           // remove reserve3
-          await network.addReserve(reserve3.address, false, {from: admin});
+          await network.addReserve(reserve3.address, false, {from: operator});
 
           // fee should be 0 as we have set it to 0
           recordedFeePercent = await network.feeForReserve(reserve3.address);
@@ -2842,21 +2844,16 @@ contract('Network', function(accounts) {
       });
 
       it("Should test can init fee holder, set fee holder to network and receive fee as expected", async function() {
-        console.log("Init fee sharing");
-        let feeSharing = await FeeSharing.new(admin, network);
-        console.log("Set fee sharing");
         try {
           await network.setFeeSharing(zeroAddress, {from: admin});
           assert(false, "throw was expected in line above.")
         } catch(e){
             assert(Helper.isRevertErrorMessage(e), "expected revert but got: " + e);
         }
-        console.log("Done settings fee sharing");
-
-        await network.setFeeSharing(feeSharing, {from: admin});
-        console.log("Successfully set fee holder address");
+        fixedFeeSharing.setNetworkContract(network.address, {from: admin});
+        await network.setFeeSharing(fixedFeeSharing.address, {from: admin});
         let feeHolder = await network.feeSharing();
-        assert.equal(feeHolder.toLowerCase(), feeSharing.toLowerCase(), "Fee holder is not correct");
+        assert.equal(feeHolder.toLowerCase(), fixedFeeSharing.address.toLowerCase(), "Fee holder is not correct");
 
         let tokenInd = 0;
         let token = tokens[tokenInd]; //choose some token
@@ -2884,39 +2881,6 @@ contract('Network', function(accounts) {
         let expectedBalanceAfter = new BigNumber(networkBalBefore).plus(expectedFee);
 
         let networkBalAfter = await Helper.getBalancePromise(feeHolder);
-
-        const expectedDiffInPct = new BigNumber(0.03); // diff 3%
-        Helper.assertAbsDiff(networkBalAfter.valueOf(), expectedBalanceAfter.valueOf(), expectedDiffInPct);
-      });
-
-      it("should TOMO balance changes correctly for fee holder if it is receiver of swap tx", async function() {
-        let tokenInd = 0;
-        let token = tokens[tokenInd]; //choose some token
-        let amountTwei = 4000;
-        let maxDestAmount = 100000000;
-
-        let rates = await network.getExpectedRate(tokenAdd[tokenInd], ethAddress, amountTwei);
-        let minRate = rates[0].valueOf();
-
-        // transfer funds to user and approve funds to network
-        await token.transfer(network.address, amountTwei);
-        // await token.approve(network.address, amountTwei, {from:user1})
-
-        let networkBalBefore = await Helper.getBalancePromise(fixedFeeHolder);
-        //perform full amount trade. see token balance on user 1 zero
-        let txData = await network.swap(user1, tokenAdd[tokenInd], amountTwei, ethAddress, fixedFeeHolder, maxDestAmount,
-                            minRate, walletId, {from:networkProxy});
-
-        let feePercent = 25;
-        let tokenDecimal = await token.decimals();
-        let changeInDecimals = new BigNumber(10).pow(tokenDecimal);
-
-        let expectedDestAmount = new BigNumber(amountTwei).mul(rates[0]).div(changeInDecimals).round();
-        let expectedFee = new BigNumber(expectedDestAmount).mul(feePercent).div(10000).round();
-
-        let expectedBalanceAfter = new BigNumber(networkBalBefore).plus(expectedFee).plus(expectedDestAmount);
-
-        let networkBalAfter = await Helper.getBalancePromise(fixedFeeHolder);
 
         const expectedDiffInPct = new BigNumber(0.03); // diff 3%
         Helper.assertAbsDiff(networkBalAfter.valueOf(), expectedBalanceAfter.valueOf(), expectedDiffInPct);

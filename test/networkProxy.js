@@ -370,7 +370,7 @@ contract('NetworkProxy', function(accounts) {
         whiteList = await WhiteList.new(admin);
         await whiteList.addOperator(operator);
         await whiteList.setCategoryCap(0, capWei, {from:operator});
-        await whiteList.setSgdToEthRate(sgdToEthRate, {from:operator});
+        await whiteList.setSgdToTomoRate(sgdToEthRate, {from:operator});
         console.log("Done settings 2");
 
         expectedRate = await ExpectedRate.new(network.address, admin);
@@ -1159,7 +1159,7 @@ contract('NetworkProxy', function(accounts) {
         await whiteList.setCategoryCap(2, 1, {from:operator}); //1 sgd
 
         //set low wei to sgd rate.
-        await whiteList.setSgdToEthRate(10, {from: operator});
+        await whiteList.setSgdToTomoRate(10, {from: operator});
 
         //perform trade
         try {
@@ -1171,7 +1171,7 @@ contract('NetworkProxy', function(accounts) {
         }
 
         //set normal wei to sgd rate.
-        await whiteList.setSgdToEthRate(30000, {from: operator});
+        await whiteList.setSgdToTomoRate(30000, {from: operator});
         await whiteList.setCategoryCap(2, 100, {from:operator}); //1 sgd
 
         //see trade success with good gas price

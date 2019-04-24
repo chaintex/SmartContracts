@@ -23,7 +23,7 @@ contract('WhiteList', function(accounts) {
         sgdToTomoRateInWei = (((new BigNumber(10)).pow(18)).mul(oneSgdToTomo));
         whiteListInst = await WhiteList.new(admin);
         await whiteListInst.addOperator(operator, {from: admin});
-        await whiteListInst.setSgdToEthRate(sgdToTomoRateInWei, {from : operator});
+        await whiteListInst.setSgdToTomoRate(sgdToTomoRateInWei, {from : operator});
 
         // set defaultUserCapSgd SGD cap for category 0 which is the default for all users.
         await whiteListInst.setCategoryCap(0, defaultUserCapSgd, {from : operator});

@@ -109,9 +109,9 @@ contract ExpectedRate is Withdrawable, ExpectedRateInterface, Utils2 {
         uint rateTomoToDest;
         (reserve, rateSrcToTomo) = network.searchBestRate(src, TOMO_TOKEN_ADDRESS, srcQty);
 
-        uint ethQty = calcDestAmount(src, TOMO_TOKEN_ADDRESS, srcQty, rateSrcToTomo);
+        uint tomoQty = calcDestAmount(src, TOMO_TOKEN_ADDRESS, srcQty, rateSrcToTomo);
 
-        (reserve, rateTomoToDest) = network.searchBestRate(TOMO_TOKEN_ADDRESS, dest, ethQty);
+        (reserve, rateTomoToDest) = network.searchBestRate(TOMO_TOKEN_ADDRESS, dest, tomoQty);
         return rateSrcToTomo * rateTomoToDest / PRECISION;
     }
 }

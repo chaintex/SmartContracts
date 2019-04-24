@@ -321,7 +321,6 @@ contract ConversionRates is ConversionRatesInterface, VolumeImbalanceRecorder, U
     }
 
     function getListedTokensAtIndex(uint id) public view returns(TRC20) {
-      require(id < listedTokens.length);
       return listedTokens[id];
     }
 

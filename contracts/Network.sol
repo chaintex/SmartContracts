@@ -59,14 +59,14 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         admin = _admin;
     }
 
-    event EtherReceival(address indexed sender, uint amount);
+    event TomoReceival(address indexed sender, uint amount);
 
     /* solhint-disable no-complex-fallback */
     // To avoid users trying to swap tokens using default payable function. We added this short code
     //  to verify Tomos will be received only from reserves if transferred without a specific function call.
     function() public payable {
         require(isReserve[msg.sender]);
-        emit EtherReceival(msg.sender, msg.value);
+        emit TomoReceival(msg.sender, msg.value);
     }
     /* solhint-enable no-complex-fallback */
 
@@ -143,11 +143,11 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
 
     event AddReserveToNetwork(ReserveInterface reserve, bool add);
 
-    /// @notice can be called only by admin
+    /// @notice can be called only by operator
     /// @dev add or deletes a reserve to/from the network.
     /// @param reserve The reserve address.
     /// @param add If true, the add reserve. Otherwise delete reserve.
-    function addReserve(ReserveInterface reserve, bool add) public onlyAdmin {
+    function addReserve(ReserveInterface reserve, bool add) public onlyOperator {
 
         if (add) {
             require(!isReserve[reserve]);
@@ -169,7 +169,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         }
     }
 
-    // @notice can be called only by admin
+    // @notice can be called only by operator
     // @dev add or delete a reserve for fee to/from the network
     // @dev will need to call separately function addReserve
     // @dev this reserve must list pair (Tomo, token) to support trade from Tomo -> token
@@ -177,7 +177,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
     // @param token: token to map with the reserve
 
     event AddFeeReserveToNetwork(ReserveInterface reserve, TRC20 token);
-    function addFeeReserve(ReserveInterface reserve, TRC20 token) public onlyAdmin {
+    function addFeeReserve(ReserveInterface reserve, TRC20 token) public onlyOperator {
       require(token != address(0), "Token can not be address 0x0");
       require(isReserve[reserve] == true, "Reserve is not an added reserve");
       address[] memory reserveArr = reservesPerTokenDest[token];
@@ -185,6 +185,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
       for(uint i = 0; i < reserveArr.length; i++) {
         if (reserveArr[i] == address(reserve)) {
           isReserveAdded = true;
+          break;
         }
       }
       require(isReserveAdded, "Must add this reserve to general reserve first");
@@ -194,15 +195,15 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
 
     event ListReservePairs(address reserve, TRC20 src, TRC20 dest, bool add);
 
-    /// @notice can be called only by admin
+    /// @notice can be called only by operator
     /// @dev allow or prevent a specific reserve to trade a pair of tokens
     /// @param reserve The reserve address.
     /// @param token token address
-    /// @param tomoToToken will it support ether to token trade
-    /// @param tokenToTomo will it support token to ether trade
+    /// @param tomoToToken will it support tomo to token trade
+    /// @param tokenToTomo will it support token to tomo trade
     /// @param add If true then list this pair, otherwise unlist it.
     function listPairForReserve(address reserve, TRC20 token, bool tomoToToken, bool tokenToTomo, bool add)
-        public onlyAdmin
+        public onlyOperator
     {
         require(isReserve[reserve]);
 
@@ -329,13 +330,11 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
     }
 
     function getReservesPerTokenSrcCount(TRC20 token) public view returns(uint) {
-      address[] memory reserveArr = reservesPerTokenSrc[token];
-      return reserveArr.length;
+      return reservesPerTokenSrc[token].length;
     }
 
     function getReservesPerTokenDestCount(TRC20 token) public view returns(uint) {
-      address[] memory reserveArr = reservesPerTokenDest[token];
-      return reserveArr.length;
+      return reservesPerTokenDest[token].length;
     }
 
     struct BestRateResult {
@@ -378,7 +377,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
     /* solhint-disable code-complexity */
     // Not sure how solhing defines complexity. Anyway, from our point of view, below code follows the required
     //  algorithm to choose a reserve, it has been tested, reviewed and found to be clear enough.
-    //@dev this function always src or dest are ether. can't do token to token
+    //@dev this function always src or dest are tomos. can't do token to token
     function searchBestRate(TRC20 src, TRC20 dest, uint srcAmount) public view returns(address, uint) {
         uint bestRate = 0;
         uint bestReserve = 0;
@@ -445,11 +444,11 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         result.rate = calcRateFromQty(srcAmount, result.destAmount, getDecimals(src), getDecimals(dest));
     }
 
-    function listPairs(address reserve, TRC20 token, bool isTokenToEth, bool add) internal {
+    function listPairs(address reserve, TRC20 token, bool isTokenToTomo, bool add) internal {
         uint i;
         address[] storage reserveArr = reservesPerTokenDest[token];
 
-        if (isTokenToEth) {
+        if (isTokenToTomo) {
             reserveArr = reservesPerTokenSrc[token];
         }
 
@@ -461,6 +460,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
                     //remove
                     reserveArr[i] = reserveArr[reserveArr.length - 1];
                     reserveArr.length--;
+                    break;
                 }
             }
         }
@@ -476,8 +476,8 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
     /* solhint-disable function-max-lines */
     // Most of the lins here are functions calls spread over multiple lines. We find this function readable enough
     //  and keep its size as is.
-    /// @notice use token address TOMO_TOKEN_ADDRESS for ether
-    /// @dev trade api for kyber network.
+    /// @notice use token address TOMO_TOKEN_ADDRESS for tomo
+    /// @dev trade api for network.
     /// @param tradeInput structure of trade inputs
     function trade(TradeInput memory tradeInput) internal returns(uint) {
         require(isEnabled);
@@ -514,7 +514,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         require(weiAmount <= getUserCapInWei(tradeInput.trader));
 
         //do the trade
-        //src to ETH
+        //src to TOMO
 
         require(doReserveTrade(
                 tradeInput.src,
@@ -527,7 +527,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
                 true,
                 tradeInput.walletId));
 
-        //Eth to dest
+        //TOMO to dest
         require(doReserveTrade(
                 TOMO_TOKEN_ADDRESS,
                 weiAmount,
@@ -586,8 +586,8 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
           expectedRate);
 
       if (actualSrcAmount < tradeInput.srcAmount) {
-          // if there is "change" send back to trader
-          tradeInput.src.transfer(tradeInput.trader, (tradeInput.srcAmount - actualSrcAmount));
+        // src is always a TRC20 token and not TOMO as we already checked if src is TOMO and return above
+        require(tradeInput.src.transfer(tradeInput.trader, (tradeInput.srcAmount - actualSrcAmount)));
       }
 
       // verify trade size is smaller than user cap, dest is always TOMO
@@ -640,7 +640,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         }
     }
 
-    /// @notice use token address TOMO_TOKEN_ADDRESS for ether
+    /// @notice use token address TOMO_TOKEN_ADDRESS for tomo
     /// @dev do one trade with a reserve
     /// @param src Src token
     /// @param amount amount of src tokens
@@ -666,7 +666,7 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         uint callValue = 0;
 
         if (src == dest) {
-            //this is for a "fake" trade when both src and dest are ethers.
+            //this is for a "fake" trade when both src and dest are tomos.
             if (destAddress != (address(this)))
                 destAddress.transfer(amount);
             return true;
@@ -694,11 +694,11 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
         // receive feeInWei amount of Tomo as fee
         expectedTomoBal += feeInWei;
 
-        // reserve sends tokens/eth to network. network sends it to destination
+        // reserve sends tokens/tomo to network. network sends it to destination
         require(reserve.trade.value(callValue)(src, amount, dest, this, conversionRate, feeInWei, validate), "doReserveTrade: reserve trade failed");
 
         if (destAddress != address(this)) {
-            //for token to token dest address is network. and Ether / token already here...
+            //for token to token dest address is network. and Tomo / token already here...
             if (dest == TOMO_TOKEN_ADDRESS) {
                 destAddress.transfer(expectedDestAmount);
             } else {
@@ -711,8 +711,11 @@ contract Network is Withdrawable, Utils2, NetworkInterface, ReentrancyGuard {
 
         if (feeSharing != address(0) && feeInWei > 0) {
           require(address(this).balance >= feeInWei);
+          expectedTomoBal -= feeInWei;
           // transfer fee to feeSharing
           require(feeSharing.handleFees.value(feeInWei)(walletId));
+          // expected only fee in wei is transfered to feeSharing
+          require(address(this).balance == expectedTomoBal);
         }
 
         return true;
