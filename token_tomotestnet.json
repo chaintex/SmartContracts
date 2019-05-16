@@ -1,0 +1,61 @@
+{
+  "network": "",
+  "networkID": 89,
+  "chainName": "Tomo Testnet",
+  "ethScanUrl": "https://scan.testnet.tomochain.com/",
+  "endpoint": "https://testnet.tomochain.com",
+  "tokens": {
+    "TOMO": {
+      "name": "Tomochain",
+      "symbol": "TOMO",
+      "icon": "tomo",
+      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "decimals": 18,
+    },
+    "CTT": {
+      "name": "ChainTEX Token",
+      "symbol": "CTT",
+      "icon": "ctt",
+      "address": "0x06cca536f531ac3426077ca39b629d901c5cf272",
+      "decimals": 18,
+      "liquidityConversionRate": "0x6d9544d1d519b90f6fba5461703e05e749cfa6cb",
+      "reserveAMM": "0x4c9986baaadd0667fe1bdd37106dc1968fe0497f"
+    },
+    "KNC": {
+      "name": "Kyber Network Crystal",
+      "symbol": "KNC",
+      "icon": "knc",
+      "address": "0x26d22feb6419d08cc38a10812a231926fe427491",
+      "decimals": 16,
+      "liquidityConversionRate": "0x07b41564e9a42582a2977c2baf5f2b080e705b44",
+      "reserveAMM": "0x44b1f8e82fde4f28409625129889f586be260b46"
+    },
+    "TIIM": {
+      "name": "TriipMiles",
+      "symbol": "TIIM",
+      "icon": "tiim",
+      "address": "0x095d85e62cb6ad354ff900c1d530a7c4b8e247b5",
+      "decimals": 18,
+      "liquidityConversionRate": "0xd7cc35f43a3bce92a03fc2904d5416b2a437f661",
+      "reserveAMM": "0xfe44f06eb9c72f9fa617b83bafae53bea774b9c0"
+    }
+  },
+  "connections": {
+    "http": [
+      {
+        "endPoint" : "https://testnet.tomochain.com",
+        "type": "prune"
+      }
+    ],
+    "ws": "wss://testnet.tomochain.com/ws"
+  },
+  "whitelist": "0x0",
+  "networkProxy": "0x00252a171ee0ea54bfcf326c8cf86fd970205df0",
+  "network": "0xd546b404096c469dc05f7f7442f86c42ec096f09",
+  "expectedRate": "0x77d4311151a5f0f7c76f9e7a0d033ce4c7d1d3ca",
+  "admin": "0x4f2604aaC91114aE3b3D0be485D407D02B24480B",
+  "testReceiver": "0x2262d4f6312805851e3b27c40db2c7282e6e4a49",
+  "feeSharing": "0xbeb92468b8890e016e3a4925fcab32f991bcafcd",
+  "testTokenAmount": "0x1B69B4BACD05F15",
+  "tradeTopic": "0x314089036943f0e5ddddd6939d359902c01dac1be72c517cc8342fca023ad71e"
+}
