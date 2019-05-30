@@ -1,0 +1,43 @@
+{
+  "network": "",
+  "networkID": 88,
+  "chainName": "Tomo Mainnet",
+  "ethScanUrl": "https://scan.tomochain.com/",
+  "endpoint": "https://rpc.tomochain.com",
+  "tokens": {
+    "TOMO": {
+      "name": "Tomochain",
+      "symbol": "TOMO",
+      "icon": "tomo",
+      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "decimals": 18,
+    },
+    "CONST": {
+      "name": "Constant Stablecoin",
+      "symbol": "CONST",
+      "icon": "const",
+      "address": "0x7b0f797798fe5377ad34b631b1d42c9a3292f7c1",
+      "decimals": 2,
+      "liquidityConversionRate": "0xb713cdfeb0eef8c354f553a3985fe07ecb04056f",
+      "reserveAMM": "0x14a4f7368e0954a10519a95c5788777e9709dc4e"
+    }
+  },
+  "connections": {
+    "http": [
+      {
+        "endPoint" : "https://rpc.tomochain.com",
+        "type": "prune"
+      }
+    ],
+    "ws": "wss://ws.tomochain.com"
+  },
+  "feeSharing": "0x8730be040f31477c014a0669bb3526701e6f3b0b",
+  "whitelist": "",
+  "networkProxy": "0x0008ee1b43655bb473fc312a5da4be09decd2a04",
+  "network": "0xd4e2b4b4e9073f4de7131c0c63793c81fad975a0",
+  "expectedRate": "0x1339a02b03881a5d39781997ed533f7e852b99c6",
+  "admin": "0x80b603bce2d8cc3acb43b6692514b463a16fb425",
+  "testReceiver": "",
+  "testTokenAmount": "0x1B69B4BACD05F15",
+  "tradeTopic": "0x314089036943f0e5ddddd6939d359902c01dac1be72c517cc8342fca023ad71e"
+}

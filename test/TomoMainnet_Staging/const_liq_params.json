@@ -1,0 +1,10 @@
+{
+  "_rInFp": 10995116277,
+  "_pMinInFp": 931836104540,
+  "_numFpBits": 40,
+  "_maxCapBuyInWei": 10000000000000000000,
+  "_maxCapSellInWei": 10000000000000000000,
+  "_feeInBps": 25,
+  "_maxTokenToEthRateInPrecision": 3390000000000000000,
+  "_minTokenToEthRateInPrecision": 847500000000000000
+}
