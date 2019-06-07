@@ -28,7 +28,7 @@
     "solc": "0.4.25",
     "solhint": "1.4.0",
     "solium": "^1.2.4",
-    "truffle": "4.0.1",
+    "truffle": "^5.0.21",
     "truffle-assertions": "^0.7.1",
     "truffle-flattener": "^1.2.5",
     "web3": "1.0.0-beta.37",
